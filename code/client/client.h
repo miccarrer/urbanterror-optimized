@@ -420,6 +420,11 @@ extern	cvar_t	*vid_xpos;
 extern	cvar_t	*vid_ypos;
 extern	cvar_t	*r_noborder;
 
+extern	cvar_t	*r_windowMarginTop;
+extern	cvar_t	*r_windowMarginBottom;
+extern	cvar_t	*r_windowMarginLeft;
+extern	cvar_t	*r_windowMarginRight;
+
 extern	cvar_t	*r_allowSoftwareGL;
 extern	cvar_t	*r_swapInterval;
 extern	cvar_t	*r_glDriver;

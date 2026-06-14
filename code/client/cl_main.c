@@ -77,6 +77,11 @@ cvar_t	*vid_xpos;			// X coordinate of window position
 cvar_t	*vid_ypos;			// Y coordinate of window position
 cvar_t	*r_noborder;
 
+cvar_t	*r_windowMarginTop;
+cvar_t	*r_windowMarginBottom;
+cvar_t	*r_windowMarginLeft;
+cvar_t	*r_windowMarginRight;
+
 cvar_t *r_allowSoftwareGL;	// don't abort out if the pixelformat claims software
 cvar_t *r_swapInterval;
 cvar_t *r_glDriver;
@@ -3796,6 +3801,15 @@ static void CL_InitGLimp_Cvars( void )
 	r_noborder = Cvar_Get( "r_noborder", "0", CVAR_ARCHIVE_ND | CVAR_LATCH );
 	Cvar_CheckRange( r_noborder, "0", "1", CV_INTEGER );
 	Cvar_SetDescription( r_noborder, "Setting to 1 will remove window borders and title bar in windowed mode, hold ALT to drag & drop it with opened console." );
+
+	r_windowMarginTop = Cvar_Get( "r_windowMarginTop", "-1", CVAR_ARCHIVE | CVAR_LATCH );
+	Cvar_SetDescription( r_windowMarginTop, "Windowed mode: top margin in pixels. -1 = auto (center) or use vid_ypos if all margins are 0." );
+	r_windowMarginBottom = Cvar_Get( "r_windowMarginBottom", "-1", CVAR_ARCHIVE | CVAR_LATCH );
+	Cvar_SetDescription( r_windowMarginBottom, "Windowed mode: bottom margin in pixels (e.g. for taskbar). -1 = auto (center)." );
+	r_windowMarginLeft = Cvar_Get( "r_windowMarginLeft", "-1", CVAR_ARCHIVE | CVAR_LATCH );
+	Cvar_SetDescription( r_windowMarginLeft, "Windowed mode: left margin in pixels. -1 = auto (center)." );
+	r_windowMarginRight = Cvar_Get( "r_windowMarginRight", "-1", CVAR_ARCHIVE | CVAR_LATCH );
+	Cvar_SetDescription( r_windowMarginRight, "Windowed mode: right margin in pixels. -1 = auto (center)." );
 
 	r_mode = Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
 	Cvar_CheckRange( r_mode, "-2", va( "%i", s_numVidModes-1 ), CV_INTEGER );

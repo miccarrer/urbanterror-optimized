@@ -203,6 +203,9 @@ static int GLW_SetMode( int mode, const char *modeFS, qboolean fullscreen, qbool
 	int display;
 	int x;
 	int y;
+	// Window margin system temporary variables
+	int marginW = 0, marginH = 0;
+	qboolean marginApplyW = qfalse, marginApplyH = qfalse;
 	Uint32 flags = SDL_WINDOW_SHOWN;
 
 #ifdef USE_VULKAN_API
@@ -227,12 +230,57 @@ static int GLW_SetMode( int mode, const char *modeFS, qboolean fullscreen, qbool
 	}
 	else
 	{
+		// Window margin system (CSS-like)
+		// -1 = auto (center), >=0 = fixed margin in pixels
+		// If all margins are 0, fall back to vid_xpos/vid_ypos (backward compatible)
+		int mt = r_windowMarginTop->integer;
+		int mb = r_windowMarginBottom->integer;
+		int ml = r_windowMarginLeft->integer;
+		int mr = r_windowMarginRight->integer;
+		int useMargins = (mt != 0 || mb != 0 || ml != 0 || mr != 0);
+
 		x = vid_xpos->integer;
 		y = vid_ypos->integer;
 
 		// find out to which display our window belongs to
 		// according to previously stored \vid_xpos and \vid_ypos coordinates
 		display = FindNearestDisplay( &x, &y, 640, 480 );
+
+		// Apply margin system if any margin is non-zero
+		if ( useMargins && display >= 0 )
+		{
+			SDL_Rect displayBounds;
+			if ( SDL_GetDisplayBounds( display, &displayBounds ) == 0 )
+			{
+				// Horizontal: compute x and width from margins
+				if ( ml >= 0 && mr >= 0 )
+				{
+					marginW = displayBounds.w - ml - mr;
+					if ( marginW < 320 ) marginW = 320;
+					marginApplyW = qtrue;
+					x = displayBounds.x + ml;
+				}
+				else if ( ml < 0 || mr < 0 )
+				{
+					// Auto (center) horizontally
+					x = SDL_WINDOWPOS_CENTERED_DISPLAY( display );
+				}
+
+				// Vertical: compute y and height from margins
+				if ( mt >= 0 && mb >= 0 )
+				{
+					marginH = displayBounds.h - mt - mb;
+					if ( marginH < 240 ) marginH = 240;
+					marginApplyH = qtrue;
+					y = displayBounds.y + mt;
+				}
+				else if ( mt < 0 || mb < 0 )
+				{
+					// Auto (center) vertically
+					y = SDL_WINDOWPOS_CENTERED_DISPLAY( display );
+				}
+			}
+		}
 
 		//Com_Printf("Selected display: %i\n", display );
 	}
@@ -260,6 +308,18 @@ static int GLW_SetMode( int mode, const char *modeFS, qboolean fullscreen, qbool
 	}
 
 	Com_Printf( " %d %d\n", config->vidWidth, config->vidHeight );
+
+	// Override with window margin dimensions if applicable
+	if ( marginApplyW )
+	{
+		config->vidWidth = marginW;
+		Com_Printf( "Window width overridden to %i by margin system\n", marginW );
+	}
+	if ( marginApplyH )
+	{
+		config->vidHeight = marginH;
+		Com_Printf( "Window height overridden to %i by margin system\n", marginH );
+	}
 
 	// Destroy existing state if it exists
 	if ( SDL_glContext != NULL )
