@@ -14,7 +14,7 @@
         "matcher": "Edit|Write",
         "hooks": [
           { "type": "command",
-            "command": "f=$(jq -r '.tool_input.file_path // empty'); case \"$f\" in *.c|*.h) command -v clang-format >/dev/null 2>&1 && clang-format -i \"$f\" ;; esac" }
+            "command": "bash -c 'f=$(jq -r \".tool_input.file_path // empty\"); case \"$f\" in *.c|*.h) command -v git >/dev/null 2>&1 && git clang-format -f -- \"$f\" >/dev/null 2>&1 || true ;; esac'" }
         ]
       }
     ]
