@@ -13,11 +13,15 @@ Features specific to Urban Terror Optimized, beyond the stock Quake3e / ioquake3
   (`FS_CheckIdPaks` disabled, `FS_GamePak` + `CL_FirstDownload` filtering).
 - **Optional server cvars** — `sv_sayprefix` / `sv_tellprefix`, `sv_nofallDamage`,
   `sv_infiniteStamina`. See [CVARS.md](CVARS.md).
+- **Private message to self (`messagemode5` / `tellme`)** — sends your text to the server as a
+  tell to your own client: invisible to other players, but still parsed server-side (e.g.
+  mod/bot `!` commands). `messagemode5` opens the chat interactively (fits the
+  `messagemode1`–`4` family); `tellme <text>` is the scripted/bind variant. Self-tell sends are
+  saved to the input history (recall with ↑/↓ in the chat field).
 
 ## Planned (M5 — see [ROADMAP.md](../ROADMAP.md))
 
 - Tabbed console (multiple consoles)
-- `tellme` command (+ referee command fix)
 - Urban Terror demo format support
 - Optional: dmaHD high-quality audio mixer
 
