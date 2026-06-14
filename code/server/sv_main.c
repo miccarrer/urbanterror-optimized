@@ -57,6 +57,11 @@ cvar_t	*sv_lanForceRate; // dedicated 1 (LAN) server forces local client rates t
 cvar_t *sv_levelTimeReset;
 cvar_t *sv_filter;
 
+cvar_t *sv_sayprefix;
+cvar_t *sv_tellprefix;
+cvar_t *sv_nofallDamage;
+cvar_t *sv_infiniteStamina;
+
 #ifdef USE_BANS
 cvar_t	*sv_banFile;
 serverBan_t serverBans[SERVER_MAXBANS];

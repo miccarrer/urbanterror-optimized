@@ -1343,7 +1343,7 @@ static void SV_ConSay_f( void ) {
 		p++;
 	}
 
-	strcpy( text, "console: " );
+	strcpy( text, sv_sayprefix->string );
 	strcat( text, p );
 
 	SV_SendServerCommand( NULL, "chat \"%s\"", text );
@@ -1389,7 +1389,7 @@ static void SV_ConTell_f( void ) {
 		p++;
 	}
 
-	strcpy( text, S_COLOR_MAGENTA "console: " );
+	strcpy( text, sv_tellprefix->string );
 	strcat( text, p );
 
 	Com_Printf( "%s\n", text );

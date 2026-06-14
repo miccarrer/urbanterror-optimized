@@ -806,6 +806,15 @@ void SV_Init( void )
 	sv_filter = Cvar_Get( "sv_filter", "filter.txt", CVAR_ARCHIVE );
 	Cvar_SetDescription( sv_filter, "Cvar that point on filter file, if it is "" then filtering will be disabled." );
 
+	sv_sayprefix = Cvar_Get( "sv_sayprefix", "console: ", CVAR_ARCHIVE_ND );
+	Cvar_SetDescription( sv_sayprefix, "Prefix prepended to server 'say' console messages." );
+	sv_tellprefix = Cvar_Get( "sv_tellprefix", S_COLOR_MAGENTA "console: ", CVAR_ARCHIVE_ND );
+	Cvar_SetDescription( sv_tellprefix, "Prefix prepended to server 'tell' console messages." );
+	sv_nofallDamage = Cvar_Get( "sv_nofallDamage", "0", CVAR_ARCHIVE_ND );
+	Cvar_SetDescription( sv_nofallDamage, "Disable fall damage on the server (no lemmings)." );
+	sv_infiniteStamina = Cvar_Get( "sv_infiniteStamina", "0", CVAR_ARCHIVE_ND );
+	Cvar_SetDescription( sv_infiniteStamina, "Give players infinite stamina (Urban Terror)." );
+
 	// initialize bot cvars so they are listed and can be set before loading the botlib
 	SV_BotInitCvars();
 
