@@ -2195,6 +2195,68 @@ void CL_NextDownload( void )
 }
 
 
+#ifdef USE_CURL
+/*
+=================
+CL_FirstDownload
+
+Filter the download list to only include the current map file when
+downloading from modded servers. This prevents unnecessary downloads.
+=================
+*/
+static void CL_FirstDownload(void) {
+	char *s, *name;
+	const char *info;
+	
+	info = cl.gameState.stringData + cl.gameState.stringOffsets[CS_SERVERINFO];
+
+	// Remove everything that isn't the current map in the download list
+	while (*clc.downloadList) {
+		qboolean keep = qfalse;
+		s = clc.downloadList;
+		if (*s == '@')
+			s++;
+
+		name = s;
+
+		if ((s = strchr(s, '@')) == NULL) {
+			*clc.downloadList = 0;
+			break;
+		}
+
+		*s = 0;
+
+		if (!Q_stricmp(COM_SkipPath(name), va("%s.pk3", Info_ValueForKey(info, "mapname")))) {
+			keep = qtrue;
+		}
+
+		*s++ = '@';
+
+		name = s;
+
+		if ((s = strchr(s, '@')) == NULL) {
+			s = name + strlen(name);
+		}
+
+		if (keep) {
+			*s = 0;
+			break;
+		} else {
+			memmove(clc.downloadList, s, strlen(s) + 1);
+		}
+	}
+
+	Com_DPrintf("Rewritten download list: %s\n", clc.downloadList);
+
+	if (*clc.downloadList) {
+		CL_NextDownload();
+	} else {
+		CL_DownloadsComplete();
+	}
+}
+#endif
+
+
 /*
 =================
 CL_InitDownloads
@@ -2231,7 +2293,11 @@ void CL_InitDownloads( void ) {
 			*clc.downloadTempName = *clc.downloadName = '\0';
 			Cvar_Set( "cl_downloadName", "" );
 
+#ifdef USE_CURL
+			CL_FirstDownload();
+#else
 			CL_NextDownload();
+#endif
 			return;
 		}
 
