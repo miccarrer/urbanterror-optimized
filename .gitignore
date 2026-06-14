@@ -5,3 +5,8 @@ output/
 *.user
 cmake-*
 .idea
+
+# Outillage dev local (non versionné)
+compile_commands.json
+.cache/
+.claude/settings.local.json

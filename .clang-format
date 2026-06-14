@@ -1,0 +1,31 @@
+# Urban Terror Optimized — style C (convention Quake3 / ioquake3)
+# Voir CLAUDE.md > "Coding Style". Appliqué automatiquement sur les fichiers édités
+# (hook Claude Code) — PAS sur tout le repo d'un coup pour éviter un diff massif.
+---
+Language: Cpp
+BasedOnStyle: LLVM
+
+# Indentation : tabs (largeur 4)
+UseTab: ForIndentation
+TabWidth: 4
+IndentWidth: 4
+
+# Accolades : ouvrante sur la même ligne que l'instruction de contrôle / fonction
+BreakBeforeBraces: Attach
+
+# Espaces à l'intérieur des parenthèses : if ( x ), Func( arg )
+SpacesInParens: Custom
+SpacesInParensOptions:
+  InConditionalStatements: true
+  Other: true
+
+# Divers conventions q3
+ColumnLimit: 0
+PointerAlignment: Right
+SpaceBeforeParens: ControlStatements
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+KeepEmptyLinesAtTheStartOfBlocks: false
+SortIncludes: Never
+IndentCaseLabels: false
