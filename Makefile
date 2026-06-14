@@ -734,11 +734,17 @@ endif
 default: release
 all: debug release
 
+# User-supplied extra flags appended to the build (e.g. sanitizers):
+#   make debug EXTRA_CFLAGS="-fsanitize=address" EXTRA_LDFLAGS="-fsanitize=address"
+# These are appended (not overriding), so internal defines/includes/libs are kept.
+EXTRA_CFLAGS ?=
+EXTRA_LDFLAGS ?=
+
 debug:
-	@$(MAKE) targets B=$(BD) CFLAGS="$(CFLAGS) $(DEBUG_CFLAGS)" LDFLAGS="$(LDFLAGS) $(DEBUG_LDFLAGS)" V=$(V)
+	@$(MAKE) targets B=$(BD) CFLAGS="$(CFLAGS) $(DEBUG_CFLAGS) $(EXTRA_CFLAGS)" LDFLAGS="$(LDFLAGS) $(DEBUG_LDFLAGS) $(EXTRA_LDFLAGS)" V=$(V)
 
 release:
-	@$(MAKE) targets B=$(BR) CFLAGS="$(CFLAGS) $(RELEASE_CFLAGS)" V=$(V)
+	@$(MAKE) targets B=$(BR) CFLAGS="$(CFLAGS) $(RELEASE_CFLAGS) $(EXTRA_CFLAGS)" V=$(V)
 
 define ADD_COPY_TARGET
 TARGETS += $2

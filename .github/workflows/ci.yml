@@ -79,11 +79,11 @@ jobs:
           key: san-${{ github.job }}
       - name: Build with sanitizers
         run: |
-          # 'debug' target propagates both CFLAGS and LDFLAGS to the recursive make
-          # (the 'release' target does not propagate LDFLAGS), so -fsanitize links correctly.
-          make debug -j$(nproc) CC="ccache gcc" \
-            CFLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" \
-            LDFLAGS="-fsanitize=address,undefined"
+          # EXTRA_* are appended by the Makefile (debug target), so internal
+          # libs (-lm, ...) and defines/includes are preserved; -fsanitize is added.
+          make debug -j$(nproc) CC="ccache gcc" USE_RENDERER_DLOPEN=0 \
+            EXTRA_CFLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" \
+            EXTRA_LDFLAGS="-fsanitize=address,undefined"
 
   build:
     name: build ${{ matrix.name }}
