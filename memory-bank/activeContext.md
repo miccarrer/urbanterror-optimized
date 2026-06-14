@@ -3,7 +3,16 @@
 ## Dernière mise à jour
 2026-06-14 — Session 3 : fondations/outillage + réorganisation de la roadmap
 
-## Milestone actuel : M1 — Identité & hygiène des fichiers (local FAIT, GitHub en attente)
+## Milestone actuel : M3 — CI/CD (M1 et M2 terminés)
+
+M1 (identité/hygiène) et M2 (gouvernance/qualité) **terminés et poussés**. Prochaine étape :
+**M3 — CI/CD** (scinder `build.yml` → `ci.yml` + `release.yml` ; clang-format, cppcheck,
+clang-tidy, build ASan/UBSan, cache ; artifacts `urbanterror-optimized-*` + notes auto).
+
+---
+
+### Historique récent
+## (ancien) M1 — Identité & hygiène des fichiers
 
 Roadmap réorganisée **« fondations d'abord »** (M0–M6, voir `ROADMAP.md`). M0 posé.
 

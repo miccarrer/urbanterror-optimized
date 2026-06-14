@@ -71,15 +71,15 @@ Ordre : **M0 → M1 → M2 → M3 → M4** (fondations) **→ M5** (features) **
 ## M2 — Gouvernance & configuration qualité
 
 *Rendre le projet contribuable et outillé pour la qualité.*
-**Risque : très faible.**
+**Risque : très faible.** ✅ **Terminé (2026-06-14).**
 
-- [ ] `CONTRIBUTING.md` — workflow git, conventional commits, build & format, process PR
-- [ ] `SECURITY.md` — politique de signalement
-- [ ] `CHANGELOG.md` — format [Keep a Changelog]
-- [ ] `CODEOWNERS`
-- [ ] `.github/ISSUE_TEMPLATE/` + `.github/PULL_REQUEST_TEMPLATE.md`
-- [ ] `.clang-tidy` — jeu de checks adapté au C (style ioq3) + suppressions `cppcheck` si besoin
-- [ ] Documenter l'outillage (bear/ccache/mold, `compile_commands.json`) dans `docs/BUILD.md`
+- [x] `CONTRIBUTING.md` — workflow git, conventional commits, build & format, process PR
+- [x] `SECURITY.md` — signalement via GitHub private advisories (pas d'email exposé)
+- [x] `CHANGELOG.md` — format [Keep a Changelog] (+ entrée 0.1.0)
+- [x] `CODEOWNERS`
+- [x] `.github/ISSUE_TEMPLATE/` (+ config) + `.github/PULL_REQUEST_TEMPLATE.md`
+- [x] `.clang-tidy` — jeu de checks conservateur pour le C legacy (validé `--verify-config`)
+- [x] Documenter l'outillage (bear/ccache/mold) dans `docs/BUILD.md` (fait en M1)
 
 ---
 

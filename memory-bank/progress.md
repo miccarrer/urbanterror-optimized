@@ -64,9 +64,9 @@
 - [ ] **GitHub (externe, à déclencher)** : rename repo → `urbanterror-optimized`, maj `origin`,
       tags Quake3e → `v0.1.0`, `git push origin main` (commits M1 locaux non poussés)
 
-### M2 — Gouvernance & qualité
-- [ ] CONTRIBUTING.md, SECURITY.md, CHANGELOG.md, CODEOWNERS, templates `.github/`
-- [ ] `.clang-tidy` + suppressions cppcheck
+### M2 — Gouvernance & qualité ✅ FAIT (2026-06-14)
+- [x] CONTRIBUTING.md, SECURITY.md, CHANGELOG.md, CODEOWNERS, templates `.github/` (issue+PR)
+- [x] `.clang-tidy` (validé `--verify-config`)
 
 ### M3 — CI/CD (complète)
 - [ ] Scinder `build.yml` → `ci.yml` + `release.yml`
