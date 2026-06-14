@@ -1,11 +1,17 @@
 # Active Context — Urban Terror Optimized
 
 ## Dernière mise à jour
-2026-06-14 — Session de nettoyage du repo + mise à jour memory bank
+2026-06-14 — Session 3 : fondations/outillage + réorganisation de la roadmap
 
-## Phase actuelle : POST-PHASE-1A — En attente de la prochaine phase
+## Milestone actuel : M1 — Identité & hygiène des fichiers
 
-La Phase 1A est terminée et mergée dans `main`. Le repo est propre. La prochaine étape à décider est Phase 1B (features UrT) ou Phase 2 (branding).
+Roadmap réorganisée **« fondations d'abord »** (M0–M6, voir `ROADMAP.md`). Les fondations
+(M0 : conventions, config Claude Code, outillage, vault, sécurité downloads/JIT NaN) sont
+posées. **Prochaine étape : M1** (drop CMake, README UrT, purge docs Q3A, restructure `docs/`,
+LICENSE, rename repo GitHub + tag `v0.1.0`).
+
+> Contrainte structurante : `code/` reste **aligné upstream Quake3e** (cherry-pick préservé) ;
+> on ne réorganise que le **non-code** (racine, `docs/`, `scripts/`, CI).
 
 ## Ce qui a été fait lors de la dernière session (2026-06-14)
 
@@ -26,13 +32,12 @@ La Phase 1A est terminée et mergée dans `main`. Le repo est propre. La prochai
 ## Décisions en attente / points ouverts
 
 - ~~**JIT NaN fix** (`56f03bca`)~~ : ✅ Résolu (2026-06-14) — déjà présent via Quake3e upstream (`56f03bca` + `cdb374ec` dans l'historique de `main`). Voir `progress.md`.
-- **dmaHD** : Intégrer ou non ? (1524 lignes de code audio, complexité moyenne — voir Phase 1D du ROADMAP)
-- **Renommage repo GitHub** : Le fork s'appelle encore `Quake3e` sur GitHub. À renommer en `urbanterror-optimized` (Phase 2).
-- **Tags Git** : Les tags actuels (`2021-03-28`, etc.) sont ceux de Quake3e. À remplacer par `v1.0.0` (Phase 6).
+- **dmaHD** : Intégrer ou non ? (1524 lignes de code audio, complexité moyenne — M5 du ROADMAP)
+- **Décision validée** : abandon de CMake (build = Makefile + MSVC) — à exécuter en M1.
+- **Décision validée** : rename repo GitHub + tags → `v0.1.0` à faire en M1 (action externe).
 
 ## Prochaine étape recommandée
 
-**Option A — Phase 2 (branding)** : Courte, faible risque. Renommer CMakeLists.txt CNAME, réécrire README, nettoyer CI.
-**Option B — Phase 1B (features UrT)** : Plus long, valeur élevée. Console multi-onglets + tellme + demo UrT.
-
-Voir `ROADMAP.md` pour l'ordre d'exécution complet.
+**M1 — Identité & hygiène des fichiers** (voir `ROADMAP.md`). Démarrer par : suppression de
+CMake, réécriture README, nettoyage/restructuration `docs/`, puis actions GitHub
+(rename + `v0.1.0`). Faible risque, aucun fichier de `code/` touché.

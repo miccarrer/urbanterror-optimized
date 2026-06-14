@@ -101,15 +101,23 @@ void SomeFunction( int arg ) {
 - Conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, `ci:`
 - After any C code change, verify `make` compiles before committing
 
-## Active Roadmap (6 phases)
+## Active Roadmap (foundations first)
 
-See `ROADMAP.md` for full details. Current priority order:
+See `ROADMAP.md` for full details. Milestone order — **foundations before features**:
 
-1. **Phase 1A** — Security fixes (JIT NaN, download filter, master server/modversion)
-2. **Phase 2** — Rebrand Quake3e → Urban Terror Optimized (CMake, CI, README)
-3. **Phase 4** — Dev conventions (`.editorconfig`, `.clang-format`)
-4. **Phase 1B** — UrT features (tabbed console, tellme command, UrT demo support)
-5. **Phase 1C** — Optional server cvars (sv_sayprefix, sv_nofalldamage, sv_infiniteStamina)
-6. **Phases 3, 5, 6** — Docs reorganization, CI/CD modernization, final cleanup
+- ✅ **M0** — Foundations laid (security fixes, branding Makefile, JIT NaN verified, dev
+  conventions, Claude Code config, tooling). Done — do not redo.
+- **M1** — Identity & file hygiene (drop CMake, README, `scripts/`, purge Q3A legacy docs,
+  restructure `docs/`, LICENSE, GitHub rename + `v0.1.0`) ← **current**
+- **M2** — Governance & quality config (CONTRIBUTING/SECURITY/CHANGELOG/CODEOWNERS,
+  templates, `.clang-tidy`)
+- **M3** — CI/CD modernization (`ci.yml` + `release.yml`, clang-format/cppcheck/clang-tidy/
+  ASan-UBSan/cache)
+- **M4** — Reference docs (CVARS, CREDITS, third-party, urt-features)
+- **M5** — UrT feature integration (tabbed console, tellme, demo, server cvars, opt. dmaHD)
+- **M6** — Release v1.0.0
+
+**Constraint**: `code/` stays aligned with `ec-/Quake3e` upstream (preserve cherry-pick);
+reorganize **non-code only** (root, `docs/`, `scripts/`, CI).
 
 `ANALYSIS_REPORT.md` documents which commits from `omg-urt/urbanterror-slim` are missing and need integration.

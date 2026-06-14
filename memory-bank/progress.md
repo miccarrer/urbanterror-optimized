@@ -2,7 +2,7 @@
 
 ## État global du projet
 
-**Phase actuelle** : POST-PHASE-1A — Phase 1A terminée et mergée. Repo propre. Prochaine phase à décider.
+**Milestone actuel** : **M1 — Identité & hygiène des fichiers**. Fondations (M0) posées. Roadmap réorganisée « fondations d'abord » (voir `ROADMAP.md`).
 
 ---
 
@@ -31,6 +31,16 @@
 - [x] Feature branch mergée en FF dans `main`, worktree supprimé, branches nettoyées
 - [x] `main` pushé sur `origin`
 
+### M0 — Fondations / outillage (2026-06-14, session 3)
+- [x] Conventions dev : `.clang-format`, `.editorconfig`, `.gitattributes`, `.gitignore`
+- [x] Config Claude Code : `.claude/settings.json` (allowlist + hook clang-format),
+      `.claude/agents/memory-bank-manager.md` ; dédup `.clinerules`/`.instructions.md`
+- [x] Outillage Arch : bear, ccache, mold, cppcheck installés ; `compile_commands.json` généré
+- [x] MCP Context7 ajouté (scope user) ; remotes `slim`/`upstream` push `DISABLE`
+- [x] Base de connaissances : vault Obsidian (PARA-lite, `github.com/miccarrer/notes` privé)
+      + symlink memory-bank ; auto-mémoire Claude
+- [x] Roadmap réorganisée « fondations d'abord » (M0→M6)
+
 ---
 
 ## ✅ Résolu
@@ -43,40 +53,35 @@
 
 ---
 
-## 📋 À faire (voir `ROADMAP.md` pour le détail complet)
+## 📋 À faire — par milestone (voir `ROADMAP.md` pour le détail complet)
 
-### Phase 1 — Intégration du code
-- [x] **1A** — Fixes sécurité + branding + window margins + modversion
-- [x] JIT NaN fix (`56f03bca` + `cdb374ec`) — déjà présent via upstream, vérifié 2026-06-14
-- [ ] **1B** — Features UrT : Console à onglets (`2c70fdc0`), Tellme (`d4f12aa7`+), Demo UrT (`9579fc7e`)
-- [ ] **1C** — Cvars serveur : sv_sayprefix (`dd52e95f`), sv_nofalldamage (`be301ebf`), sv_infiniteStamina (`bbb587d4`), referee fix (`b834398f`)
-- [ ] **1D** — (Optionnel) dmaHD audio engine (`213e0e5d`) — 1524 lignes, décision en attente
+> Contrainte : `code/` reste aligné upstream ; réorg du **non-code** uniquement (M1–M4).
 
-### Phase 2 — Branding complet
-- [ ] CMakeLists.txt : `CNAME "quake3e"` → `"urbanterror-optimized"`
-- [ ] CI : Renommer artifacts, nettoyer jobs désactivés
-- [ ] README.md, BUILD.md : Réécrire pour UrT
-- [ ] Supprimer docs Q3A legacy (`docs/quake3e-*`, `docs/README.*`)
-- [ ] Renommer repo GitHub `Quake3e` → `urbanterror-optimized`
-- [ ] Créer `LICENSE` (alias de `COPYING.txt` pour GitHub)
-- [ ] Tags Git : Supprimer tags Quake3e, créer `v1.0.0`
+### M1 — Identité & hygiène fichiers ← **en cours**
+- [ ] Supprimer `CMakeLists.txt` + `cmake_modules/` (abandon CMake)
+- [ ] Réécrire `README.md` pour UrT ; créer `scripts/` ; créer `LICENSE`
+- [ ] Purger docs Q3A legacy ; restructurer `docs/` (legal/, analysis/) ; `BUILD.md` → `docs/`
+- [ ] GitHub : rename repo → `urbanterror-optimized`, maj `origin`, tags → `v0.1.0`
 
-### Phase 3 — Documentation
-- [ ] Réorganiser `docs/` (legal/, analysis/)
-- [ ] Créer CHANGELOG.md, CONTRIBUTING.md, SECURITY.md
-- [ ] Créer CREDITS.md, CVARS.md, urt-features.md
+### M2 — Gouvernance & qualité
+- [ ] CONTRIBUTING.md, SECURITY.md, CHANGELOG.md, CODEOWNERS, templates `.github/`
+- [ ] `.clang-tidy` + suppressions cppcheck
 
-### Phase 4 — Conventions dev
-- [ ] `.editorconfig`, `.clang-format`, `.gitattributes`
+### M3 — CI/CD (complète)
+- [ ] Scinder `build.yml` → `ci.yml` + `release.yml`
+- [ ] ci : matrix Makefile + clang-format + cppcheck + clang-tidy + ASan/UBSan + cache
+- [ ] release : artifacts `urbanterror-optimized-*` + notes auto depuis CHANGELOG
 
-### Phase 5 — CI/CD
-- [ ] Séparer `ci.yml` / `release.yml`
-- [ ] Lint clang-format, caching, release notes auto
+### M4 — Docs de référence
+- [ ] `docs/CVARS.md`, `docs/CREDITS.md`, `docs/legal/third-party.txt`, `docs/urt-features.md`
 
-### Phase 6 — Nettoyage final
-- [ ] Build test Linux complet
-- [ ] Tags Git, remote GitHub
-- [ ] Vérification finale
+### M5 — Features UrT (ex-1B/1C/1D)
+- [ ] Console à onglets (`2c70fdc0`), Tellme (`d4f12aa7`+), Demo UrT (`9579fc7e`)
+- [ ] Cvars serveur : sv_sayprefix (`dd52e95f`), sv_nofalldamage (`be301ebf`), sv_infiniteStamina (`bbb587d4`), referee fix (`b834398f`)
+- [ ] (Optionnel) dmaHD (`213e0e5d`)
+
+### M6 — Release v1.0.0
+- [ ] Build test complet via CI ; tag `v1.0.0` ; CHANGELOG
 
 ---
 
@@ -86,7 +91,7 @@
 |------------|--------|
 | Commits urbanterror-slim analysés | 66 |
 | Fonctionnalités déjà intégrées | 13 |
-| Fonctionnalités intégrées en Phase 1A | 4 (sécurité + modversion + window margins) |
-| Fonctionnalités manquantes restantes | ~7 |
-| Phases roadmap totales | 6 |
-| Phases terminées | 1 (Phase 1A) |
+| Fonctionnalités intégrées en M0 | 4 (sécurité + modversion + window margins) |
+| Fonctionnalités manquantes restantes | ~7 (M5) |
+| Milestones roadmap | 7 (M0–M6) |
+| Milestones terminés | 1 (M0 — fondations) |

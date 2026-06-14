@@ -86,7 +86,7 @@ void SomeFunction( int arg ) {
 - Solution : `code/win32/msvc2017/quake3e.sln`
 - Projects : `quake3e.vcxproj`, `quake3e-ded.vcxproj`, `renderer.vcxproj`, `renderervk.vcxproj`
 
-## Cvars ajoutées (Phase 1A)
+## Cvars ajoutées (M0 / ex-Phase 1A)
 
 ### Window margins (css-like windowed mode positioning)
 - `r_windowMarginTop` / `r_windowMarginBottom` / `r_windowMarginLeft` / `r_windowMarginRight`
