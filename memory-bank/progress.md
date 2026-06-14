@@ -68,10 +68,12 @@
 - [x] CONTRIBUTING.md, SECURITY.md, CHANGELOG.md, CODEOWNERS, templates `.github/` (issue+PR)
 - [x] `.clang-tidy` (validé `--verify-config`)
 
-### M3 — CI/CD (complète)
-- [ ] Scinder `build.yml` → `ci.yml` + `release.yml`
-- [ ] ci : matrix Makefile + clang-format + cppcheck + clang-tidy + ASan/UBSan + cache
-- [ ] release : artifacts `urbanterror-optimized-*` + notes auto depuis CHANGELOG
+### M3 — CI/CD (complète) ✅ écrit (2026-06-14), à valider par un run réel
+- [x] Scinder `build.yml` → `ci.yml` + `release.yml`
+- [x] ci : matrix Makefile (Linux/macOS/Win-MSYS2) + clang-format (lignes modifiées) + cppcheck
+      (informatif) + ASan/UBSan + cache ccache
+- [x] release : build multi-plateforme, artifacts `urbanterror-optimized-*`, release auto
+- [ ] À surveiller : 1er run de `ci.yml` (clang-tidy en CI reporté ; MSVC couvert par release.yml)
 
 ### M4 — Docs de référence
 - [ ] `docs/CVARS.md`, `docs/CREDITS.md`, `docs/legal/third-party.txt`, `docs/urt-features.md`

@@ -3,11 +3,11 @@
 ## Dernière mise à jour
 2026-06-14 — Session 3 : fondations/outillage + réorganisation de la roadmap
 
-## Milestone actuel : M3 — CI/CD (M1 et M2 terminés)
+## Milestone actuel : M4 — Docs de référence (M1, M2, M3 écrits)
 
-M1 (identité/hygiène) et M2 (gouvernance/qualité) **terminés et poussés**. Prochaine étape :
-**M3 — CI/CD** (scinder `build.yml` → `ci.yml` + `release.yml` ; clang-format, cppcheck,
-clang-tidy, build ASan/UBSan, cache ; artifacts `urbanterror-optimized-*` + notes auto).
+M1, M2 **terminés**. M3 (CI/CD) **écrit et poussé** — `ci.yml` + `release.yml` remplacent
+`build.yml`. **À valider par le premier run CI réel** (déclenché par le push). Prochaine étape :
+**M4 — Docs de référence** (CVARS.md, CREDITS.md, third-party.txt, urt-features.md).
 
 ---
 

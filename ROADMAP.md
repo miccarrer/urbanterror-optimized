@@ -85,20 +85,20 @@ Ordre : **M0 → M1 → M2 → M3 → M4** (fondations) **→ M5** (features) **
 
 ## M3 — CI/CD modernisation
 
-*Le `build.yml` actuel (17 KB) est hérité de Quake3e. Scinder et durcir.*
-**Risque : moyen.**
+*Le `build.yml` (17 KB) hérité de Quake3e a été scindé et durci.*
+**Risque : moyen.** ✅ **Écrit (2026-06-14) — à valider par un run CI réel.**
 
-- [ ] Scinder `.github/workflows/build.yml` → `ci.yml` (PR/push) + `release.yml` (tag `v*`)
-- [ ] `ci.yml` :
-  - [ ] Matrix build Linux / Windows (MSYS2 + MSVC) / macOS via **Makefile**
-  - [ ] Lint **clang-format** (`--dry-run -Werror`)
-  - [ ] Analyse statique **cppcheck** + **clang-tidy**
-  - [ ] Build **sanitizers** (ASan/UBSan) sur Linux
-  - [ ] **Caching** (ccache)
-- [ ] `release.yml` :
-  - [ ] Build + artifacts renommés `urbanterror-optimized-*`
-  - [ ] Release notes auto depuis `CHANGELOG.md`
-- [ ] Retirer les jobs morts/commentés (ARM commentés, msys32 redondant)
+- [x] Scinder `.github/workflows/build.yml` → `ci.yml` (PR/push) + `release.yml` (tag `v*`)
+- [x] `ci.yml` :
+  - [x] Matrix build Linux / macOS / Windows (MSYS2) via **Makefile** + ccache
+  - [x] Lint **clang-format** sur les **lignes modifiées** (`git clang-format`, pas le legacy)
+  - [x] Analyse statique **cppcheck** (informatif, `continue-on-error`)
+  - [x] Build **sanitizers** (ASan/UBSan) sur Linux
+  - [x] **Caching** (ccache via hendrikmuhs/ccache-action)
+- [x] `release.yml` : build multi-plateforme, artifacts `urbanterror-optimized-*`, release auto
+- [x] Retirer le `build.yml` legacy (jobs ARM morts, msys32, artifacts `quake3e-*`)
+- [ ] **Validation** : observer le premier run de `ci.yml` (clang-tidy en CI : reporté, lancé
+      manuellement via `.clang-tidy` pour l'instant ; MSVC en CI : couvert par `release.yml`)
 
 ---
 
