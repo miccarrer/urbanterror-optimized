@@ -16,9 +16,9 @@
 | libogg + libvorbis | Décodeur audio Ogg Vorbis | Oui (`code/libogg/`, `code/libvorbis/`) |
 
 ### Build systems
-- **Makefile** (principal) — Support Linux, macOS, MinGW, Raspberry Pi, PowerPC
-- **CMakeLists.txt** (alternatif) — Maintenu mais `CNAME` encore à `"quake3e"` (Phase 2 pending)
-- **MSVC** (`code/win32/msvc2017/quake3e.sln`) — Windows natif
+- **Makefile** (canonique) — Support Linux, macOS, MinGW, Raspberry Pi, PowerPC
+- **MSVC** (`code/win32/msvc2017/`) — Windows natif
+- CMake : **supprimé en M1** (build = Makefile + MSVC ; IDE via `compile_commands.json`/bear)
 
 ### CI/CD
 - **GitHub Actions** (`.github/workflows/build.yml`)

@@ -44,9 +44,11 @@ make USE_SDL=0                               # Disable SDL2 backend
 
 Key Makefile variables: `CNAME`, `DNAME`, `ARCH`, `USE_SDL`, `USE_VULKAN`, `USE_OPENGL`, `USE_OPENGL2`, `USE_RENDERER_DLOPEN`, `RENDERER_DEFAULT`, `BUILD_CLIENT`, `BUILD_SERVER`.
 
-MSVC (Windows): open `code/win32/msvc2017/quake3e.sln`.
+MSVC (Windows): open the solution in `code/win32/msvc2017/`.
 
-CMake is an alternative build system but `CNAME` is still set to `"quake3e"` — fix pending (Phase 2).
+The build system is the **Makefile** (Linux/macOS/MinGW) plus the MSVC solution for native
+Windows. CMake was dropped (M1); IDE/clangd integration is provided by `compile_commands.json`
+generated via `bear -- make`.
 
 ## Shell Warning
 

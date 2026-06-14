@@ -78,9 +78,9 @@ void SomeFunction( int arg ) {
 - Cible : `make install DESTDIR=<path>` ou `make` (sortie dans `build/`)
 - Le Makefile supporte Linux, macOS, MinGW (Windows), Raspberry Pi, PowerPC
 
-### CMakeLists.txt (alternatif)
-- Moins utilisé que le Makefile, mais maintenu
-- **Attention** : `CNAME` est encore sur `"quake3e"` (à corriger en Phase 2 — Makefile déjà corrigé)
+### CMake — SUPPRIMÉ (M1)
+- `CMakeLists.txt` et `cmake_modules/` ont été retirés. Build = Makefile + MSVC.
+- IDE/clangd via `compile_commands.json` (`bear -- make`). Récupérable dans l'historique git si besoin.
 
 ### MSVC (Windows)
 - Solution : `code/win32/msvc2017/quake3e.sln`
