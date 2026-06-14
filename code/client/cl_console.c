@@ -65,6 +65,7 @@ typedef struct {
 } console_t;
 
 extern  qboolean    chat_team;
+extern qboolean chat_cmdMode;
 extern  int         chat_playerNum;
 
 console_t	con;
@@ -178,6 +179,7 @@ static void Con_MessageMode5_f( void ) {
 		return;
 	}
 	chat_team = qfalse;
+	chat_cmdMode = qtrue;
 	Field_Clear( &chatField );
 	chatField.widthInChars = 30;
 	Key_SetCatcher( Key_GetCatcher() ^ KEYCATCH_MESSAGE );
@@ -193,7 +195,6 @@ for use in binds/scripts. The text is also recorded in the input history.
 */
 static void Con_Tellme_f( void ) {
 	char buffer[MAX_STRING_CHARS];
-	field_t hist;
 
 	if ( Cmd_Argc() < 2 ) {
 		Com_Printf( "usage: tellme <text>\n" );
@@ -204,10 +205,6 @@ static void Con_Tellme_f( void ) {
 	}
 	Com_sprintf( buffer, sizeof( buffer ), "tell %i \"%s\"\n", clc.clientNum, Cmd_ArgsFrom( 1 ) );
 	CL_AddReliableCommand( buffer, qfalse );
-
-	Field_Clear( &hist );
-	Q_strncpyz( hist.buffer, Cmd_ArgsFrom( 1 ), sizeof( hist.buffer ) );
-	Con_SaveField( &hist );
 }
 
 /*

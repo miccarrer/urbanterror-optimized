@@ -30,6 +30,7 @@ key up events are sent even if in console mode
 field_t		g_consoleField;
 field_t		chatField;
 qboolean	chat_team;
+qboolean chat_cmdMode; // messagemode5/tellme: a leading '/' runs a client console command
 
 int			chat_playerNum;
 
@@ -507,37 +508,45 @@ static void Message_Key( int key ) {
 	if (key == K_ESCAPE) {
 		Key_SetCatcher( Key_GetCatcher( ) & ~KEYCATCH_MESSAGE );
 		Field_Clear( &chatField );
+		chat_cmdMode = qfalse;
 		return;
 	}
 
 	if ( key == K_ENTER || key == K_KP_ENTER )
 	{
 		if ( chatField.buffer[0] && cls.state == CA_ACTIVE ) {
-			if ( chat_playerNum != -1 )
-				Com_sprintf( buffer, sizeof( buffer ), "tell %i \"%s\"\n", chat_playerNum, chatField.buffer );
-			else if ( chat_team )
-				Com_sprintf( buffer, sizeof( buffer ), "say_team \"%s\"\n", chatField.buffer );
-			else
-				Com_sprintf( buffer, sizeof( buffer ), "say \"%s\"\n", chatField.buffer );
-
-			CL_AddReliableCommand( buffer, qfalse );
-
-			// record private messages to ourselves (messagemode5 / tellme) in the input history
-			if ( chat_playerNum >= 0 && chat_playerNum == clc.clientNum ) {
+			// in tellme mode (messagemode5) keep the typed line in the input history
+			if ( chat_cmdMode ) {
 				Con_SaveField( &chatField );
 			}
+
+			if ( chat_cmdMode && chatField.buffer[0] == '/' ) {
+				// run the rest of the line as a CLIENT console command (not sent to the server)
+				Cbuf_AddText( chatField.buffer + 1 );
+				Cbuf_AddText( "\n" );
+			} else if ( chat_playerNum != -1 ) {
+				Com_sprintf( buffer, sizeof( buffer ), "tell %i \"%s\"\n", chat_playerNum, chatField.buffer );
+				CL_AddReliableCommand( buffer, qfalse );
+			} else if ( chat_team ) {
+				Com_sprintf( buffer, sizeof( buffer ), "say_team \"%s\"\n", chatField.buffer );
+				CL_AddReliableCommand( buffer, qfalse );
+			} else {
+				Com_sprintf( buffer, sizeof( buffer ), "say \"%s\"\n", chatField.buffer );
+				CL_AddReliableCommand( buffer, qfalse );
+			}
 		}
+		chat_cmdMode = qfalse;
 		Key_SetCatcher( Key_GetCatcher( ) & ~KEYCATCH_MESSAGE );
 		Field_Clear( &chatField );
 		return;
 	}
 
-	if ( key == K_UPARROW ) {
+	if ( chat_cmdMode && key == K_UPARROW ) {
 		Con_HistoryGetPrev( &chatField );
 		return;
 	}
 
-	if ( key == K_DOWNARROW ) {
+	if ( chat_cmdMode && key == K_DOWNARROW ) {
 		Con_HistoryGetNext( &chatField );
 		return;
 	}
