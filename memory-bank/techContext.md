@@ -72,11 +72,13 @@ make clean && make -j$(nproc) 2>&1 | tail -5
 
 ## Git — Remotes
 
-| Remote | URL | Rôle |
-|--------|-----|------|
-| `origin` | `git@github.com:miccarrer/Quake3e.git` | Notre repo (push/pull par défaut) |
-| `upstream` | `https://github.com/ec-/Quake3e.git` | Quake3e upstream (lecture seule — cherry-pick de fixes) |
-| `slim` | `https://github.com/omg-urt/urbanterror-slim.git` | Référence UrT features (lecture seule) |
+| Remote | URL (fetch) | Push | Rôle |
+|--------|-----|------|------|
+| `origin` | `git@github.com:miccarrer/Quake3e.git` | activé | Notre repo (push/pull par défaut) |
+| `upstream` | `https://github.com/ec-/Quake3e.git` | `DISABLE` | Quake3e upstream (lecture seule — cherry-pick de fixes) |
+| `slim` | `https://github.com/omg-urt/urbanterror-slim.git` | `DISABLE` | Référence UrT features (lecture seule) |
+
+> Le push est explicitement désactivé sur `upstream` et `slim` (`git remote set-url --push <remote> DISABLE`) pour éviter tout push accidentel vers les repos amont.
 
 - Branche principale : `main`
 - Convention de commit : Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, `ci:`)

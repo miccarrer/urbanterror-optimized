@@ -25,7 +25,7 @@ La Phase 1A est terminée et mergée dans `main`. Le repo est propre. La prochai
 
 ## Décisions en attente / points ouverts
 
-- **JIT NaN fix** (`56f03bca`) : `progress.md` le marque comme fait mais il n'y a aucun commit correspondant. **À vérifier** : ce fix est-il déjà présent dans notre codebase via Quake3e upstream, ou doit-on l'importer de slim ?
+- ~~**JIT NaN fix** (`56f03bca`)~~ : ✅ Résolu (2026-06-14) — déjà présent via Quake3e upstream (`56f03bca` + `cdb374ec` dans l'historique de `main`). Voir `progress.md`.
 - **dmaHD** : Intégrer ou non ? (1524 lignes de code audio, complexité moyenne — voir Phase 1D du ROADMAP)
 - **Renommage repo GitHub** : Le fork s'appelle encore `Quake3e` sur GitHub. À renommer en `urbanterror-optimized` (Phase 2).
 - **Tags Git** : Les tags actuels (`2021-03-28`, etc.) sont ceux de Quake3e. À remplacer par `v1.0.0` (Phase 6).

@@ -33,12 +33,13 @@
 
 ---
 
-## ⚠️ À vérifier
+## ✅ Résolu
 
-### JIT NaN fix (`56f03bca` depuis urbanterror-slim)
-- Ce fix est dans le ROADMAP en `[ ]` mais une session précédente l'avait marqué ✅ "vérification complète"
-- Aucun commit correspondant dans notre historique
-- **Action requise** : Vérifier si Quake3e upstream couvre déjà ce cas (commit `cdb374ec` désactive les optimisations FP non-sûres dans le Makefile) ou si le fix de `vm_x86.c` de slim est nécessaire
+### JIT NaN fix — DÉJÀ PRÉSENT via Quake3e upstream (vérifié 2026-06-14)
+- `56f03bca` (x86 JIT: Fix comparison ops to account for NaN operands) est **dans l'historique de `main`** (`git merge-base --is-ancestor 56f03bca HEAD` → YES). La logique est visible dans `code/qcommon/vm_x86.c` (`shouldNaNCheck`, ~ligne 1775).
+- `cdb374ec` (Makefile: disable unsafe FP optimizations for QVM modules) est **aussi présent** (`-fno-fast-math` sur les modules QVM, voir `Makefile:687,718`).
+- Le fix aarch64/armv7l équivalent (`85ff5501`) est également présent.
+- **Conclusion** : aucune action requise. Le fix de slim était redondant avec l'upstream.
 
 ---
 
@@ -46,6 +47,7 @@
 
 ### Phase 1 — Intégration du code
 - [x] **1A** — Fixes sécurité + branding + window margins + modversion
+- [x] JIT NaN fix (`56f03bca` + `cdb374ec`) — déjà présent via upstream, vérifié 2026-06-14
 - [ ] **1B** — Features UrT : Console à onglets (`2c70fdc0`), Tellme (`d4f12aa7`+), Demo UrT (`9579fc7e`)
 - [ ] **1C** — Cvars serveur : sv_sayprefix (`dd52e95f`), sv_nofalldamage (`be301ebf`), sv_infiniteStamina (`bbb587d4`), referee fix (`b834398f`)
 - [ ] **1D** — (Optionnel) dmaHD audio engine (`213e0e5d`) — 1524 lignes, décision en attente
