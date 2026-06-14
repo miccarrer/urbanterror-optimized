@@ -2,7 +2,7 @@
 
 ## État global du projet
 
-**Phase actuelle** : PRÉ-EXÉCUTION — Planification terminée, exécution de la roadmap en attente.
+**Phase actuelle** : EXÉCUTION — Phase 1A terminée, Phase 1B en cours de planification.
 
 ---
 
@@ -15,18 +15,26 @@
 - [x] Création de `ROADMAP.md` (6 phases détaillées)
 - [x] Configuration du Memory Bank (`.clinerules` + 6 fichiers `memory-bank/`)
 
+### Phase 1A — Fixes sécurité (2026-06-15)
+- [x] x86 JIT NaN fix (`56f03bca`) — Vérification complète
+- [x] FS_GamePak security check pour empêcher downloads UrT paks (`0504f377`)
+- [x] CL_FirstDownload pour filtrer les serveurs moddés (`32499141`)
+- [x] Master servers + modversion cvar (`4bd6632f`)
+- [x] Build test: ✅ Succès
+- [x] Commits: 3 atomiques avec conventional commits + Copilot co-author
+
 ---
 
 ## 🔄 En cours
 
-*Rien en cours actuellement — en attente d'approbation pour démarrer la Phase 1A.*
+*Préparation pour Phase 1B — Features UrT*
 
 ---
 
 ## 📋 À faire (Roadmap — voir `ROADMAP.md` pour le détail)
 
 ### Phase 1 — Intégration du code
-- [ ] **1A** — Fixes sécurité : JIT NaN (`56f03bca`), downloads (`0504f377`, `32499141`), master server (`4bd6632f`)
+- [x] **1A** — Fixes sécurité : JIT NaN (`56f03bca`), downloads (`0504f377`, `32499141`), master server (`4bd6632f`)
 - [ ] **1B** — Features UrT : Console à onglets (`2c70fdc0`), Tellme (`d4f12aa7`), Demo UrT (`9579fc7e`)
 - [ ] **1C** — Cvars serveur : sv_sayprefix (`dd52e95f`), sv_nofalldamage (`be301ebf`), sv_infiniteStamina (`bbb587d4`), referee fix (`b834398f`)
 - [ ] **1D** — (Optionnel) dmaHD (`213e0e5d`)
