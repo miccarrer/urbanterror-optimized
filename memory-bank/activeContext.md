@@ -13,9 +13,9 @@ README UrT, LICENSE, purge docs Q3A legacy, restructuration `docs/` (legal/, ana
 **M1 — actions GitHub** :
 1. ✅ `gh repo rename urbanterror-optimized` (fait — repo public renommé)
 2. ✅ `git remote set-url origin …/urbanterror-optimized.git` (fait)
-3. ✅ Tag `v0.1.0` créé (local). Purge des 26 anciens tags Quake3e : **non faite** (cosmétique, à décider)
-4. ⏳ `git push origin main` + `git push origin v0.1.0` : **à faire** (push protégé par deny-rule → confirmation)
-Le chemin local du repo ne change pas → symlink/MOC vault inchangés.
+3. ✅ Tag `v0.1.0` créé et poussé ; 26 tags Quake3e + tag `latest` purgés (local + remote)
+4. ✅ `git push origin main` fait ; branche `master` legacy supprimée, défaut GitHub = `main`
+Le chemin local du repo ne change pas → symlink/MOC vault inchangés. **M1 terminé.**
 
 > Contrainte structurante : `code/` reste **aligné upstream Quake3e** (cherry-pick préservé) ;
 > on ne réorganise que le **non-code** (racine, `docs/`, `scripts/`, CI).

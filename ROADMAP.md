@@ -63,7 +63,8 @@ Ordre : **M0 → M1 → M2 → M3 → M4** (fondations) **→ M5** (features) **
 - [x] `git remote set-url origin …/urbanterror-optimized.git`
 - [x] Créer le tag `v0.1.0` (base fondations) — poussé
 - [x] `git push origin main` + `git push origin v0.1.0`
-- [ ] (Optionnel, cosmétique) Purger les 26 anciens tags Quake3e (local + remote)
+- [x] Purger les 26 anciens tags Quake3e (local) + tag `latest` (remote)
+- [x] Supprimer la branche `master` legacy (remote ; `master ⊆ main`), défaut GitHub → `main`
 
 ---
 
