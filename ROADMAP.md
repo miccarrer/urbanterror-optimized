@@ -127,11 +127,10 @@ Ordre : **M0 → M1 → M2 → M3 → M4** (fondations) **→ M5** (features) **
       `/cmd` exécute une **commande client** localement (`Cbuf`, pas d'envoi serveur) + historique
       + rappel ↑/↓. Intègre l'équivalent du referee fix `b834398f` (gating via `chat_cmdMode`).
       `tellme <text>` = variante bind (self-tell direct).
-- [ ] **Console à onglets** (`855ae13b` + fixups `2c70fdc0`/`03b932d1`) — **DIFFÉRÉ**. Réécriture
-      structurelle (console unique → `consoles[]` All/General/Frag/Chat/Dev + onglets, réécrit
-      `CL_ConsolePrint`). Cherry-pick non viable (10 conflits sur base divergée, non guardé,
-      casse potentielle de toute la console). À refaire en **réimplémentation fraîche** + tests
-      en jeu intensifs, quand testable en continu.
+- [x] **Console à onglets** (`855ae13b`) — **FAIT** (réimplémentation fraîche, 2026-06-15, testée
+      en jeu). Console unique → `consoles[]` (All/General/Frag/Chat) ; routage des lignes frag/chat
+      via les octets marqueurs du mod ; barre d'onglets visuelle (liseré rouge) ; bascule
+      souris (clic G/D) + shift+←/→ ; cvar `con_tabs` + commandes `con_nexttab`/`con_prevtab`.
 - [ ] **Demo UrT** (`9579fc7e`, `ec15c2c6`) — **DIFFÉRÉ**. Port invasif (218 lignes `USE_URT_DEMO`
       dans le pipeline demo ; cherry-pick = 5 conflits car notre demo-parsing a été modernisé
       par Quake3e — `DEMOEXT`/`com_protocol`). Faisable (guardé → défaut `.dm_` inchangé) mais

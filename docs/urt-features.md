@@ -20,10 +20,14 @@ Features specific to Urban Terror Optimized, beyond the stock Quake3e / ioquake3
   not sent to the server). Lines typed in this mode are kept in the input history (recall with
   ↑/↓). `messagemode5` opens it interactively (fits the `messagemode1`–`4` family);
   `tellme <text>` is the scripted/bind variant for a direct self-tell.
+- **Tabbed console** — the console is split into **All / General / Frag / Chat** tabs. Every
+  message is logged to *All*; the game's frag (kill) and chat lines are routed to their tabs
+  (via the mod's marker bytes). Switch tabs with the **mouse buttons** (left = previous, right =
+  next) or **shift+left/right**. Toggle the tab bar with the `con_tabs` cvar (default on);
+  `con_nexttab` / `con_prevtab` commands are bindable.
 
 ## Planned (M5 — see [ROADMAP.md](../ROADMAP.md))
 
-- Tabbed console (multiple consoles)
 - Urban Terror demo format support
 - Optional: dmaHD high-quality audio mixer
 

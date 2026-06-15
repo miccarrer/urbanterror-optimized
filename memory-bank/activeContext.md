@@ -42,9 +42,10 @@ flags durcissement PIE/RELRO (test JIT VM en jeu), optionnels (codecov, FUNDING)
 ## Prochaine cible recommandée : M6 — Release
 
 Les fondations ont atteint le rendement décroissant → pivoter vers la **livraison**. M5 quasi
-clos : cvars + tellme faits ; **referee fix absorbé par tellme** (réconcilié 2026-06-15) ;
-console-à-onglets / demo / dmaHD restent différés (réimpl + tests en jeu) et **ne bloquent pas**
-une release.
+clos : cvars + tellme faits ; **referee fix absorbé par tellme** ; **console à onglets FAITE**
+(2026-06-15, réimpl fraîche testée en jeu, branche `feature/tabbed-console` — workflow implémente→
+teste→itère qui débloque les features « intestables à l'aveugle »). Restent différés : demo UrT
++ dmaHD (ne bloquent pas une release).
 
 **Décisions prises (2026-06-15)** : release = **v0.2.0** (modernisation ; v1.0.0 réservé à
 l'après console-onglets + demo) ; **dmaHD hors périmètre**. **v0.2.0 TAGUÉE & PUBLIÉE** (release

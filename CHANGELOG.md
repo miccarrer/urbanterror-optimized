@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Tabbed console (UrT): the console is split into All / General / Frag / Chat tabs; the game's
+  frag and chat lines are routed to their tabs while everything is logged to All. Switch with the
+  mouse buttons or shift+left/right; `con_tabs` cvar + `con_nexttab` / `con_prevtab` commands.
+
 ## [0.2.0] - 2026-06-15
 
 Modernization release — quality, security and developer-experience hardening on top of the

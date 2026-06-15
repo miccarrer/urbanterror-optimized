@@ -87,9 +87,11 @@ Fondations M0–M4 terminées ; M5 partiel (cvars + tellme faits, console/demo d
       serveur (commandes bot invisibles) ; `/cmd` → commande CLIENT locale (`Cbuf`) + historique
       + rappel ↑/↓. Intègre l'équivalent du referee fix (gating `chat_cmdMode`). `tellme <text>`
       = variante bind.
-- [ ] **DIFFÉRÉ** Console à onglets (`855ae13b`) — réécriture structurelle (console unique →
-      `consoles[]` + onglets). Cherry-pick non viable (10 conflits, non guardé, intestable à l'aveugle).
-      À refaire en réimplémentation fraîche + tests en jeu.
+- [x] **FAIT** Console à onglets (`855ae13b`) — réimplémentation fraîche (2026-06-15, testée en jeu,
+      branche `feature/tabbed-console`). `consoles[]` All/General/Frag/Chat ; routage frag/chat via
+      octets marqueurs (0x11/0x12/0x13) ; barre d'onglets visuelle (liseré rouge) ; switch souris
+      (clic G/D) + shift+←/→ ; cvar `con_tabs` + cmds `con_nexttab`/`con_prevtab`. Itéré en 5 passes
+      (infra → routage → UI/clic → position → finitions) avec test en jeu entre chaque.
 - [ ] **DIFFÉRÉ** Demo UrT (`9579fc7e`) — port invasif (218 lignes `USE_URT_DEMO`), cherry-pick =
       5 conflits (notre demo-parsing modernisé par Quake3e). Faisable (guardé) mais nécessite
       tests `.urtdemo`/`.dm_` en jeu.
