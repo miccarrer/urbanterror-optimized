@@ -946,10 +946,14 @@ static void Con_DrawSolidConsole( float frac ) {
 		static const vec4_t bgActive = { 0.22f, 0.24f, 0.30f, 0.90f };
 		static const vec4_t bgInactive = { 0.06f, 0.06f, 0.08f, 0.75f };
 		static const vec4_t border = { 0.45f, 0.45f, 0.55f, 1.00f };
-		int ty = lines - smallchar_height - 2;
-		int th = smallchar_height + 3;
+		int th = smallchar_height + 4;
+		int ty = lines; // hang the tabs just below the console panel
 		int tx = smallchar_width;
 		int t, k, tw;
+
+		// keep them on-screen when the console is fully open (frac == 1)
+		if ( ty + th > cls.glconfig.vidHeight )
+			ty = cls.glconfig.vidHeight - th;
 		for ( t = 0; t < NUM_CON; t++ ) {
 			qboolean active = ( t == con_iActive );
 			tw = ( (int)strlen( con_names[t] ) + 2 ) * smallchar_width;
