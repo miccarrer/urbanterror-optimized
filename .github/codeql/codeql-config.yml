@@ -10,7 +10,10 @@ queries:
   - uses: security-extended
 
 # Do not raise alerts in vendored third-party libraries: we do not maintain them
-# (issues there go upstream), and they dominate the alert count.
+# (issues there go upstream). The primary exclusion is at build level — the CodeQL
+# workflow builds with USE_SYSTEM_JPEG/OGG/VORBIS so the vendored copies are not
+# compiled (paths-ignore alone is unreliable for compiled C). This list is a
+# belt-and-suspenders fallback.
 paths-ignore:
   - code/libjpeg
   - code/libcurl

@@ -22,7 +22,8 @@ jobs:
         run: |
           sudo apt-get -qq update
           sudo apt-get -y install libcurl4-openssl-dev mesa-common-dev libxxf86dga-dev \
-            libxrandr-dev libxxf86vm-dev libasound-dev libsdl2-dev
+            libxrandr-dev libxxf86vm-dev libasound-dev libsdl2-dev \
+            libjpeg-dev libogg-dev libvorbis-dev
 
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
@@ -36,7 +37,10 @@ jobs:
           config-file: ./.github/codeql/codeql-config.yml
 
       - name: Build
-        run: make -j"$(nproc)" USE_RENDERER_DLOPEN=0
+        # Use system jpeg/ogg/vorbis so the vendored copies are NOT compiled:
+        # CodeQL only analyzes what is built, and paths-ignore does not reliably
+        # exclude compiled C. This keeps third-party libs out of the results.
+        run: make -j"$(nproc)" USE_RENDERER_DLOPEN=0 USE_SYSTEM_JPEG=1 USE_SYSTEM_OGG=1 USE_SYSTEM_VORBIS=1
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
