@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tabbed console (UrT): the console is split into All / General / Frag / Chat tabs; the game's
   frag and chat lines are routed to their tabs while everything is logged to All. Switch with the
   mouse buttons or shift+left/right; `con_tabs` cvar + `con_nexttab` / `con_prevtab` commands.
+- Identity switching: save and load named player-identity profiles (name, model, colors, etc.)
+  with `saveidentity` / `loadidentity` / `listidentities`. The active profile (`cl_identity`) is
+  auto-loaded at startup. Bonus: `cl_nameRotate` cycles through a list of names on each `connect`
+  for light anti-tracking.
 
 ## [0.2.0] - 2026-06-15
 

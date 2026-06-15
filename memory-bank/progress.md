@@ -2,8 +2,8 @@
 
 ## État global du projet
 
-**Milestone actuel** : **M7 — Qualité & durcissement** (audit 2026-06-15, voir `AUDIT.md`).
-Fondations M0–M4 terminées ; M5 partiel (cvars + tellme faits, console/demo différés) ; M6 (release) en attente.
+**Milestone actuel** : **M8 / Feature #1 — Identity Switching** (session 5, 2026-06-15).
+Branche `feature/identity-switching`. Fondations M0–M4 terminées ; M5 partiel ; M6 (release v0.2.0) publiée ; M7 terminé ; M8 Feature #1 implémentée (non commitée).
 
 ---
 
@@ -131,6 +131,16 @@ runtime itératifs — non adaptées au port à l'aveugle. Différées jusqu'à 
 - [x] **Phase 4** Env & polish — devcontainer/Dockerfile, CODE_OF_CONDUCT, badges README, ARCHITECTURE.md
 - [ ] **Restant (validation externe)** : job MSVC + rebrand `.sln` (Windows) ; valider JIT en jeu
       sous durcissement (faible risque) ; optionnels (codecov, FUNDING, capture README)
+
+### M8 / Feature #1 — Identity Switching ← ✅ **Implémenté** (2026-06-15, session 5)
+- **Branche** : `feature/identity-switching` (changements non commités sur working tree)
+- [x] Implémentation `code/client/cl_main.c` (+238 lignes) :
+      `CL_SaveIdentity_f` / `CL_LoadIdentity_f` / `CL_ListIdentities_f` + tab completion,
+      `CL_NameRotate()` (appelée depuis `CL_Connect_f`), cvars `cl_identity` / `cl_nameRotate`
+      (enregistrées dans `CL_Init` + auto-load au démarrage), `Cmd_RemoveCommand` dans `CL_Shutdown`
+- [x] Build vérifié (recompilation forcée `cl_main.c` → link OK, zéro warning/erreur)
+- [x] Documentation : `docs/CVARS.md`, `docs/urt-features.md`, `ROADMAP.md` (M8), `CHANGELOG.md`
+- [ ] **Reste** : commit + push + PR + test en jeu
 
 ---
 

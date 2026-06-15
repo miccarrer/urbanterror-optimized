@@ -1,7 +1,29 @@
 # Active Context — Urban Terror Optimized
 
 ## Dernière mise à jour
-2026-06-15 — Session 4 : audit + M7 mergé, v0.2.0 publiée, hygiène GitHub + triage CodeQL
+2026-06-15 — Session 5 : feature « Identity Switching » (#1) ✅ implémentée
+
+## Feature terminée : Identity Switching (#1) ✅
+
+**Branche** : `feature/identity-switching` (changements non commités sur working tree)
+
+**Objectif** : Permettre aux joueurs de switcher d'identité (nom, apparence, binds de chat,
+tags de clan) sans toucher aux réglages de jeu (graphismes, réseau, etc.).
+
+**Commandes** : `saveidentity <name>`, `loadidentity <name>`, `listidentities`
+**Cvars** : `cl_identity` (nom du profil actif, lu au démarrage), `cl_nameRotate`
+**Fichiers** : `identities/<name>.cfg` — .cfg sélectif (identité uniquement, pas de réglages de jeu)
+**Bonus** : `cl_nameRotate` — cycle automatique de noms à chaque connexion (anti-tracking)
+**Compat** : ✅ 100% local (userinfo keys déjà transportées par les serveurs legacy)
+
+**Implémentation** : tout dans `code/client/cl_main.c` (+238 lignes, build vérifié) :
+- `CL_SaveIdentity_f`, `CL_LoadIdentity_f`, `CL_ListIdentities_f` + tab completion
+- `CL_NameRotate()` appelée depuis `CL_Connect_f`
+- Cvars `cl_identity` / `cl_nameRotate` enregistrées dans `CL_Init` + auto-load au démarrage
+- `Cmd_RemoveCommand` dans `CL_Shutdown`
+- Docs : CVARS.md, urt-features.md, ROADMAP.md, CHANGELOG.md mis à jour
+
+**Reste à faire** : commit + push + PR + test en jeu
 
 ## Post-release : hygiène GitHub & sécurité (2026-06-15)
 

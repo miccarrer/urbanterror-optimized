@@ -42,6 +42,30 @@ All default to the prior behaviour (prefixes) or off; `CVAR_ARCHIVE_ND`.
 | `sv_nofallDamage` | `0` | Disable fall damage server-side (no lemmings) |
 | `sv_infiniteStamina` | `0` | Give players infinite stamina (Urban Terror) |
 
+## Client — identity switching
+
+Save and load named identity profiles (name, model, colors, etc.) without touching
+gameplay settings. Profiles are stored as `identities/<name>.cfg`.
+
+| Cvar | Default | Description |
+|------|:-------:|-------------|
+| `cl_identity` | `` | Name of the currently-loaded identity profile (auto-loaded at startup) |
+| `cl_nameRotate` | `` | Semicolon-separated list of names; on each `connect`, the next name is selected cyclically (anti-tracking) |
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `saveidentity <name>` | Save current identity cvars to `identities/<name>.cfg` |
+| `loadidentity <name>` | Load identity from `identities/<name>.cfg` and set `cl_identity` |
+| `listidentities` | List all available identity profiles |
+
+### Identity cvars saved
+
+The following userinfo cvars are included in a saved identity: `name`, `model`,
+`headmodel`, `team_model`, `team_headmodel`, `sex`, `color1`, `color2`,
+`handicap`, `cl_anonymous`.
+
 ---
 
 *Remaining M5 features (tabbed console, tellme, UrT demo) are tracked in [ROADMAP.md](../ROADMAP.md).*

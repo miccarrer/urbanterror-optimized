@@ -25,6 +25,11 @@ Features specific to Urban Terror Optimized, beyond the stock Quake3e / ioquake3
   (via the mod's marker bytes). Switch tabs with the **mouse buttons** (left = previous, right =
   next) or **shift+left/right**. Toggle the tab bar with the `con_tabs` cvar (default on);
   `con_nexttab` / `con_prevtab` commands are bindable.
+- **Identity switching** — save and load named identity profiles (`saveidentity` /
+  `loadidentity` / `listidentities`) containing only your player-identity cvars (name, model,
+  colors, etc.) without touching gameplay settings. The active profile (`cl_identity`) is
+  auto-loaded at startup. Bonus: `cl_nameRotate` cycles through a list of names on each connect
+  for light anti-tracking. See [CVARS.md](CVARS.md).
 
 ## Planned (M5 — see [ROADMAP.md](../ROADMAP.md))
 

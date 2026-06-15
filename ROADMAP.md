@@ -204,6 +204,24 @@ projet « le plus moderne possible » : tests, sécurité CI, build, env reprodu
 
 ---
 
+## M8 — Features post-v0.2.0 (nouvelles features joueurs)
+
+*Features issues du brainstorming `docs/FEATURE_IDEAS.md` (155 idées).*
+**Risque : faible** (features client-side, zéro impact protocole).
+
+### Feature #1 — Identity Switching ✅ (2026-06-15)
+- **Branche** : `feature/identity-switching`
+- **Cas d'usage** : un joueur veut se connecter sous différentes identités (nom, apparence,
+  binds textuels, tags de clan) sans tout reconfigurer à chaque fois. Mode "incognito".
+- **Commandes** : `saveidentity <name>`, `loadidentity <name>`, `listidentities`
+- **Cvars** : `cl_identity` (nom du profil actif, lu au démarrage), `cl_nameRotate`
+- **Fichiers** : `identities/<name>.cfg` — .cfg sélectif (identité uniquement)
+- **Bonus** : `cl_nameRotate` — cycle automatique de noms à chaque connexion (anti-tracking)
+- **Compat** : ✅ 100% local (userinfo keys déjà transportées par les serveurs legacy)
+- **Statut** : ✅ Implémenté, build OK. Voir [CVARS.md](docs/CVARS.md)
+
+---
+
 ## 📋 Ordre d'exécution
 
 | # | Milestone | Durée | Risque |

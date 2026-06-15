@@ -72,6 +72,11 @@ cvar_t	*cl_dlDirectory;
 
 cvar_t	*cl_reconnectArgs;
 
+// identity switching
+cvar_t *cl_identity;
+cvar_t *cl_nameRotate;
+static int nameRotateIndex = 0;
+
 // common cvars for GLimp modules
 cvar_t	*vid_xpos;			// X coordinate of window position
 cvar_t	*vid_ypos;			// Y coordinate of window position
@@ -150,6 +155,7 @@ static void CL_Ping_f( void );
 static void CL_InitRef( void );
 static void CL_ShutdownRef( refShutdownCode_t code );
 static void CL_InitGLimp_Cvars( void );
+static void CL_NameRotate( void );
 
 static void CL_NextDemo( void );
 
@@ -1631,6 +1637,9 @@ static void CL_Connect_f( void ) {
 	noGameRestart = qtrue;
 	CL_Disconnect( qtrue );
 	Con_Close();
+
+	// rotate player name if cl_nameRotate is set
+	CL_NameRotate();
 
 	Q_strncpyz( cls.servername, server, sizeof( cls.servername ) );
 
@@ -3570,6 +3579,208 @@ static void CL_InitRef( void ) {
 
 //===========================================================================================
 
+/*
+Identity switching
+
+Allows the player to save/load named identity profiles containing
+userinfo cvars (name, model, colors, etc.) and optionally rotate
+through a list of names on each connect.
+
+Files are stored as   identities/<name>.cfg   in the home game dir.
+*/
+
+// cvars whose values make up a saved identity profile
+static const char *const identity_cvars[] = {
+    "name",
+    "model",
+    "headmodel",
+    "team_model",
+    "team_headmodel",
+    "sex",
+    "color1",
+    "color2",
+    "handicap",
+    "cl_anonymous",
+    NULL };
+
+/*
+CL_SaveIdentity_f
+
+saveidentity <name>
+
+Writes the current identity-related userinfo cvars to
+identities/<name>.cfg
+*/
+static void CL_SaveIdentity_f( void ) {
+	char filename[MAX_OSPATH];
+	fileHandle_t f;
+	int i;
+
+	if ( Cmd_Argc() != 2 ) {
+		Com_Printf( "Usage: saveidentity <name>\n" );
+		return;
+	}
+
+	Com_sprintf( filename, sizeof( filename ), "identities/%s", Cmd_Argv( 1 ) );
+	COM_DefaultExtension( filename, sizeof( filename ), ".cfg" );
+
+	f = FS_FOpenFileWrite( filename );
+	if ( f == FS_INVALID_HANDLE ) {
+		Com_Printf( S_COLOR_YELLOW "Couldn't write %s.\n", filename );
+		return;
+	}
+
+	FS_Printf( f, "// identity profile: %s" Q_NEWLINE, Cmd_Argv( 1 ) );
+
+	for ( i = 0; identity_cvars[i]; i++ ) {
+		const char *val;
+		char buf[MAX_CVAR_VALUE_STRING];
+
+		Cvar_VariableStringBuffer( identity_cvars[i], buf, sizeof( buf ) );
+		val = buf;
+		// skip empty password-like values
+		if ( !val[0] && !Q_stricmp( identity_cvars[i], "cl_anonymous" ) )
+			val = "0";
+		FS_Printf( f, "seta %s \"%s\"" Q_NEWLINE, identity_cvars[i], val );
+	}
+
+	FS_FCloseFile( f );
+
+	Com_Printf( "Saved identity '%s' to %s\n", Cmd_Argv( 1 ), filename );
+}
+
+/*
+CL_LoadIdentity_f
+
+loadidentity <name>
+
+Execs identities/<name>.cfg and updates the cl_identity cvar.
+*/
+static void CL_LoadIdentity_f( void ) {
+	char filename[MAX_OSPATH];
+	char cmd[MAX_OSPATH + 8];
+	char name[MAX_NAME_LENGTH];
+
+	if ( Cmd_Argc() != 2 ) {
+		Com_Printf( "Usage: loadidentity <name>\n" );
+		return;
+	}
+
+	Q_strncpyz( name, Cmd_Argv( 1 ), sizeof( name ) );
+	// sanitize: strip path separators and extensions from user input
+	COM_StripExtension( name, name, sizeof( name ) );
+
+	Com_sprintf( filename, sizeof( filename ), "identities/%s.cfg", name );
+
+	if ( !FS_FileExists( filename ) ) {
+		Com_Printf( S_COLOR_YELLOW "Identity '%s' not found.\n", name );
+		return;
+	}
+
+	Com_sprintf( cmd, sizeof( cmd ), "exec \"%s\"\n", filename );
+	Cbuf_AddText( cmd );
+
+	Cvar_Set( "cl_identity", name );
+	Com_Printf( "Loaded identity '%s'\n", name );
+}
+
+/*
+CL_ListIdentities_f
+
+listidentities
+
+Lists all .cfg files in the identities/ directory.
+*/
+static void CL_ListIdentities_f( void ) {
+	char listbuf[4096];
+	char *ptr;
+	int count;
+
+	Com_Printf( "Available identities:\n" );
+
+	Com_Memset( listbuf, 0, sizeof( listbuf ) );
+	count = FS_GetFileList( "identities", ".cfg", listbuf, sizeof( listbuf ) );
+
+	if ( count <= 0 ) {
+		Com_Printf( "  (none)\n" );
+		return;
+	}
+
+	ptr = listbuf;
+	while ( *ptr ) {
+		int len = strlen( ptr );
+		// strip .cfg extension for display
+		if ( len > 4 && !Q_stricmp( ptr + len - 4, ".cfg" ) )
+			Com_Printf( "  %.*s\n", len - 4, ptr );
+		else
+			Com_Printf( "  %s\n", ptr );
+		ptr += len + 1;
+	}
+}
+
+/*
+CL_CompleteIdentityName
+
+Tab completion for saveidentity / loadidentity
+*/
+static void CL_CompleteIdentityName( const char *args, int argNum ) {
+	if ( argNum == 2 ) {
+		Field_CompleteFilename( "identities", ".cfg", qtrue, FS_MATCH_EXTERN | FS_MATCH_STICK );
+	}
+}
+
+/*
+CL_NameRotate
+
+If cl_nameRotate is non-empty, pick the next name in the
+semicolon-separated list and set the "name" cvar.  Called from
+CL_Connect_f so the name changes before the userinfo is sent.
+*/
+static void CL_NameRotate( void ) {
+	char rotateStr[MAX_STRING_CHARS];
+	char name[MAX_NAME_LENGTH];
+	char *token;
+	int i;
+	int count;
+
+	if ( !cl_nameRotate || !cl_nameRotate->string[0] )
+		return;
+
+	Q_strncpyz( rotateStr, cl_nameRotate->string, sizeof( rotateStr ) );
+
+	// count entries
+	count = 1;
+	for ( i = 0; rotateStr[i]; i++ )
+		if ( rotateStr[i] == ';' )
+			count++;
+
+	if ( count == 0 )
+		return;
+
+	// advance index
+	nameRotateIndex = ( nameRotateIndex ) % count;
+
+	// extract the Nth token
+	i = 0;
+	token = strtok( rotateStr, ";" );
+	while ( token && i < nameRotateIndex ) {
+		token = strtok( NULL, ";" );
+		i++;
+	}
+
+	if ( token && token[0] ) {
+		// strip leading/trailing whitespace
+		while ( *token == ' ' || *token == '\t' )
+			token++;
+		Q_strncpyz( name, token, sizeof( name ) );
+		if ( name[0] ) {
+			Cvar_Set( "name", name );
+			Com_DPrintf( "name_rotate: set name to '%s' (index %d/%d)\n", name, nameRotateIndex + 1, count );
+		}
+	}
+
+	nameRotateIndex++;
+}
 
 static void CL_SetModel_f( void ) {
 	const char *arg;
@@ -4074,6 +4285,11 @@ void CL_Init( void ) {
 	Cvar_Get ("password", "", CVAR_USERINFO | CVAR_NORESTART);
 	Cvar_Get ("cg_predictItems", "1", CVAR_USERINFO | CVAR_ARCHIVE );
 
+	// identity switching
+	cl_identity = Cvar_Get( "cl_identity", "", CVAR_ARCHIVE_ND );
+	Cvar_SetDescription( cl_identity, "Name of the currently-loaded identity profile (for saveidentity/loadidentity)." );
+	cl_nameRotate = Cvar_Get( "cl_nameRotate", "", CVAR_ARCHIVE_ND );
+	Cvar_SetDescription( cl_nameRotate, "Semicolon-separated list of player names. On each connect, the next name is selected cyclically." );
 
 	// cgame might not be initialized before menu is used
 	Cvar_Get ("cg_viewsize", "100", CVAR_ARCHIVE_ND );
@@ -4119,6 +4335,22 @@ void CL_Init( void ) {
 	Cmd_AddCommand( "dlmap", CL_Download_f );
 #endif
 	Cmd_AddCommand( "modelist", CL_ModeList_f );
+
+	// identity switching commands
+	Cmd_AddCommand( "saveidentity", CL_SaveIdentity_f );
+	Cmd_AddCommand( "loadidentity", CL_LoadIdentity_f );
+	Cmd_SetCommandCompletionFunc( "loadidentity", CL_CompleteIdentityName );
+	Cmd_AddCommand( "listidentities", CL_ListIdentities_f );
+
+	// auto-load saved identity at startup
+	if ( cl_identity->string[0] ) {
+		char idFile[MAX_OSPATH];
+		Com_sprintf( idFile, sizeof( idFile ), "identities/%s.cfg", cl_identity->string );
+		if ( FS_FileExists( idFile ) ) {
+			Cbuf_AddText( va( "exec \"%s\"\n", idFile ) );
+			Com_DPrintf( "Auto-loading identity '%s'\n", cl_identity->string );
+		}
+	}
 
 	Cvar_Set( "cl_running", "1" );
 #ifdef USE_MD5
@@ -4192,6 +4424,9 @@ void CL_Shutdown( const char *finalmsg, qboolean quit ) {
 	Cmd_RemoveCommand ("serverinfo");
 	Cmd_RemoveCommand ("systeminfo");
 	Cmd_RemoveCommand ("modelist");
+	Cmd_RemoveCommand( "saveidentity" );
+	Cmd_RemoveCommand( "loadidentity" );
+	Cmd_RemoveCommand( "listidentities" );
 
 #ifdef USE_CURL
 	Com_DL_Cleanup( &download );
