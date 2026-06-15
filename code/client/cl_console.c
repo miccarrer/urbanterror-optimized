@@ -72,11 +72,13 @@ extern  int         chat_playerNum;
 // classic single console; the other tabs receive a routed subset (iteration 2).
 typedef enum {
 	CON_ALL = 0, // every message — the default tab
+	CON_GENERAL, // system / non-chat / non-frag messages
+	CON_FRAG,    // kill (frag) messages
 	CON_CHAT,    // chat / say messages
 	NUM_CON
 } conType_t;
 
-static const char *const con_names[NUM_CON] = { "All", "Chat" };
+static const char *const con_names[NUM_CON] = { "All", "General", "Frag", "Chat" };
 
 console_t consoles[NUM_CON];
 console_t *con = &consoles[CON_ALL]; // the active (visible) console
@@ -612,41 +614,11 @@ All console printing must go through this in order to be logged to disk
 If no console is visible, the text will appear at the top of the game window
 ================
 */
-void CL_ConsolePrint( const char *txt ) {
-	console_t *con = &consoles[CON_ALL]; // every message is logged to the All tab
+static void Con_WriteText( console_t *con, const char *txt, qboolean skipnotify ) {
 	int		y;
 	int		c, l;
 	int		colorIndex;
-	qboolean skipnotify = qfalse;		// NERVE - SMF
-	int prev;							// NERVE - SMF
-
-	// TTimo - prefix for text that shows up in console but not in notify
-	// backported from RTCW
-	if ( !Q_strncmp( txt, "[skipnotify]", 12 ) ) {
-		skipnotify = qtrue;
-		txt += 12;
-	}
-
-	// for some demos we don't want to ever show anything on the console
-	if ( cl_noprint && cl_noprint->integer ) {
-		return;
-	}
-
-	if ( !consoles[CON_ALL].initialized ) {
-		static cvar_t null_cvar = { 0 };
-		int ci;
-		for ( ci = 0; ci < NUM_CON; ci++ ) {
-			consoles[ci].color[0] = consoles[ci].color[1] =
-			    consoles[ci].color[2] = consoles[ci].color[3] = 1.0f;
-			consoles[ci].viswidth = -9999;
-			consoles[ci].initialized = qtrue;
-		}
-		cls.con_factor = 1.0f;
-		con_scale = &null_cvar;
-		con_scale->value = 1.0f;
-		con_scale->modified = qtrue;
-		Con_CheckResize();
-	}
+	int prev;
 
 	colorIndex = ColorIndex( COLOR_WHITE );
 
@@ -709,6 +681,61 @@ void CL_ConsolePrint( const char *txt ) {
 	}
 }
 
+/*
+================
+CL_ConsolePrint
+
+Pick the category tab for a message. UrT's game mod marks frag (kill) lines
+with a leading 0x11/0x12 byte and chat lines with 0x13; the marker is stripped
+here. Unmarked text goes to the General tab. Every message is also logged to All.
+================
+*/
+void CL_ConsolePrint( const char *txt ) {
+	qboolean skipnotify = qfalse; // NERVE - SMF
+	console_t *target;
+
+	// TTimo - prefix for text that shows up in console but not in notify
+	// backported from RTCW
+	if ( !Q_strncmp( txt, "[skipnotify]", 12 ) ) {
+		skipnotify = qtrue;
+		txt += 12;
+	}
+
+	// for some demos we don't want to ever show anything on the console
+	if ( cl_noprint && cl_noprint->integer ) {
+		return;
+	}
+
+	if ( !consoles[CON_ALL].initialized ) {
+		static cvar_t null_cvar = { 0 };
+		int ci;
+		for ( ci = 0; ci < NUM_CON; ci++ ) {
+			consoles[ci].color[0] = consoles[ci].color[1] =
+			    consoles[ci].color[2] = consoles[ci].color[3] = 1.0f;
+			consoles[ci].viswidth = -9999;
+			consoles[ci].initialized = qtrue;
+		}
+		cls.con_factor = 1.0f;
+		con_scale = &null_cvar;
+		con_scale->value = 1.0f;
+		con_scale->modified = qtrue;
+		Con_CheckResize();
+	}
+
+	// route to a category tab based on the game mod's leading marker byte
+	if ( txt[0] == 17 || txt[0] == 18 ) {
+		target = &consoles[CON_FRAG];
+		txt++;
+	} else if ( txt[0] == 19 ) {
+		target = &consoles[CON_CHAT];
+		txt++;
+	} else {
+		target = &consoles[CON_GENERAL];
+	}
+
+	Con_WriteText( &consoles[CON_ALL], txt, skipnotify );
+	Con_WriteText( target, txt, skipnotify );
+}
 
 /*
 ==============================================================================
