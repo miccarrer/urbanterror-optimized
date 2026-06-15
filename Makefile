@@ -634,6 +634,12 @@ else
 
   ifeq ($(PLATFORM),linux)
     LDFLAGS += -ldl -Wl,--hash-style=both
+    # Hardening: stronger stack canaries, full RELRO + immediate binding, and
+    # FORTIFY (release only — it needs optimisation). The binary is already
+    # PIE/NX; the VM JIT uses its own mmap'd executable pages, unaffected.
+    BASE_CFLAGS += -fstack-protector-strong
+    LDFLAGS += -Wl,-z,relro,-z,now
+    LINUX_RELEASE_HARDEN = -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
     ifeq ($(ARCH),x86)
       # linux32 make ...
       BASE_CFLAGS += -m32
@@ -642,7 +648,7 @@ else
   endif
 
   DEBUG_CFLAGS = $(BASE_CFLAGS) -DDEBUG -D_DEBUG -g -O0
-  RELEASE_CFLAGS = $(BASE_CFLAGS) -DNDEBUG $(OPTIMIZE)
+  RELEASE_CFLAGS = $(BASE_CFLAGS) -DNDEBUG $(OPTIMIZE) $(LINUX_RELEASE_HARDEN)
 
   DEBUG_LDFLAGS = -rdynamic
 
