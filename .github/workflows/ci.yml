@@ -85,6 +85,26 @@ jobs:
             EXTRA_CFLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" \
             EXTRA_LDFLAGS="-fsanitize=address,undefined"
 
+  unit:
+    name: unit tests (ASan+UBSan)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Run unit tests
+        run: make -C tests unit
+
+  fuzz-smoke:
+    name: fuzz smoke (libFuzzer)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install clang
+        run: sudo apt-get -qq update && sudo apt-get -y install clang
+      - name: Build fuzz targets
+        run: make -C tests fuzz CC=clang
+      - name: Short fuzz run on seed corpus
+        run: ./tests/build/fuzz_info -runs=200000 -max_total_time=60 tests/fuzz/corpus/info
+
   build:
     name: build ${{ matrix.name }}
     runs-on: ${{ matrix.os }}

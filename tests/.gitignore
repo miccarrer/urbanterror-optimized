@@ -1,0 +1,7 @@
+build/
+crash-*
+leak-*
+timeout-*
+# libFuzzer appends discovered inputs to the corpus dir; keep only the seeds.
+fuzz/corpus/*/*
+!fuzz/corpus/*/seed*
