@@ -521,6 +521,8 @@ void Con_PageDown( int lines );
 void Con_Top( void );
 void Con_Bottom( void );
 void Con_Close( void );
+void Con_NextTab( void );
+void Con_PrevTab( void );
 
 void CL_LoadConsoleHistory( void );
 void CL_SaveConsoleHistory( void );

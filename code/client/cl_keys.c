@@ -456,6 +456,16 @@ static void Console_Key( int key ) {
 		return;
 	}
 
+	// tabbed console: switch tab with shift+left/right or the mouse buttons
+	if ( ( key == K_RIGHTARROW && keys[K_SHIFT].down ) || key == K_MOUSE2 ) {
+		Con_NextTab();
+		return;
+	}
+	if ( ( key == K_LEFTARROW && keys[K_SHIFT].down ) || key == K_MOUSE1 ) {
+		Con_PrevTab();
+		return;
+	}
+
 	// console scrolling
 	if ( key == K_PGUP || key == K_MWHEELUP ) {
 		if ( keys[K_CTRL].down ) {	// hold <ctrl> to accelerate scrolling

@@ -234,12 +234,20 @@ static void Con_SetActiveTab( int idx ) {
 	con = &consoles[con_iActive];
 }
 
-static void Con_NextTab_f( void ) {
+void Con_NextTab( void ) {
 	Con_SetActiveTab( con_iActive + 1 );
 }
 
-static void Con_PrevTab_f( void ) {
+void Con_PrevTab( void ) {
 	Con_SetActiveTab( con_iActive - 1 );
+}
+
+static void Con_NextTab_f( void ) {
+	Con_NextTab();
+}
+
+static void Con_PrevTab_f( void ) {
+	Con_PrevTab();
 }
 
 /*
@@ -931,16 +939,34 @@ static void Con_DrawSolidConsole( float frac ) {
 	SCR_DrawSmallString( cls.glconfig.vidWidth - ( ARRAY_LEN( Q3_VERSION ) ) * smallchar_width,
 		lines - smallchar_height, Q3_VERSION, ARRAY_LEN( Q3_VERSION ) - 1 );
 
-	// draw the tab bar (tabbed console); active tab in yellow
+	// draw the tab bar (tabbed console) as real tabs: filled background per tab,
+	// the active one highlighted, with a 1px border. Drawn in pixel space to line
+	// up with the small-char text. Switch with shift+left/right or mouse buttons.
 	if ( con_tabs->integer ) {
+		static const vec4_t bgActive = { 0.22f, 0.24f, 0.30f, 0.90f };
+		static const vec4_t bgInactive = { 0.06f, 0.06f, 0.08f, 0.75f };
+		static const vec4_t border = { 0.45f, 0.45f, 0.55f, 1.00f };
+		int ty = lines - smallchar_height - 2;
+		int th = smallchar_height + 3;
 		int tx = smallchar_width;
-		int ty = lines - smallchar_height;
-		int t, k;
+		int t, k, tw;
 		for ( t = 0; t < NUM_CON; t++ ) {
-			re.SetColor( g_color_table[ColorIndex( t == con_iActive ? COLOR_YELLOW : COLOR_WHITE )] );
-			for ( k = 0; con_names[t][k]; k++, tx += smallchar_width )
-				SCR_DrawSmallChar( tx, ty, con_names[t][k] );
-			tx += smallchar_width * 2; // gap between tabs
+			qboolean active = ( t == con_iActive );
+			tw = ( (int)strlen( con_names[t] ) + 2 ) * smallchar_width;
+
+			re.SetColor( active ? bgActive : bgInactive );
+			re.DrawStretchPic( tx, ty, tw, th, 0, 0, 0, 0, cls.whiteShader );
+
+			re.SetColor( border );
+			re.DrawStretchPic( tx, ty, tw, 1, 0, 0, 0, 0, cls.whiteShader );          // top
+			re.DrawStretchPic( tx, ty, 1, th, 0, 0, 0, 0, cls.whiteShader );          // left
+			re.DrawStretchPic( tx + tw - 1, ty, 1, th, 0, 0, 0, 0, cls.whiteShader ); // right
+
+			re.SetColor( g_color_table[ColorIndex( active ? COLOR_YELLOW : COLOR_WHITE )] );
+			for ( k = 0; con_names[t][k]; k++ )
+				SCR_DrawSmallChar( tx + ( k + 1 ) * smallchar_width, ty + 2, con_names[t][k] );
+
+			tx += tw;
 		}
 		re.SetColor( NULL );
 	}
