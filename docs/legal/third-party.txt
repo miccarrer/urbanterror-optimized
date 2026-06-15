@@ -20,5 +20,5 @@ They are the property of their respective authors.
                  License: zlib license.
 
 The Urban Terror Optimized engine itself is licensed under the GNU GPL v2
-(see ../../LICENSE / ../../COPYING.txt). Where the GPL and a bundled library's
+(see ../../LICENSE). Where the GPL and a bundled library's
 license interact, the bundled library is used under its own permissive terms.

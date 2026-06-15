@@ -32,9 +32,8 @@ jobs:
         uses: github/codeql-action/init@dd903d2e4f5405488e5ef1422510ee31c8b32357 # v3
         with:
           languages: c-cpp
-          # security-and-quality is the broadest suite; drop to security-extended
-          # if it gets too noisy on this legacy base.
-          queries: security-and-quality
+          # Query suite + vendored-code exclusions live in the config file.
+          config-file: ./.github/codeql/codeql-config.yml
 
       - name: Build
         run: make -j"$(nproc)" USE_RENDERER_DLOPEN=0

@@ -32,4 +32,4 @@ See [docs/legal/third-party.txt](legal/third-party.txt).
 
 ## License
 
-GPL v2 — see [LICENSE](../LICENSE) / [COPYING.txt](../COPYING.txt).
+GPL v2 — see [LICENSE](../LICENSE).

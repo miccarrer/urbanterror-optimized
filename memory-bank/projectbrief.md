@@ -28,7 +28,7 @@ id Software (Quake III Arena GPL)
 
 ## License
 
-GPL v2 — voir `COPYING.txt`
+GPL v2 — voir `LICENSE`
 
 ## Statut
 

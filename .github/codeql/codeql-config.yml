@@ -1,0 +1,20 @@
+name: "Urban Terror Optimized CodeQL config"
+
+# Focus on real security issues in our own engine code.
+#
+# The default 'security-and-quality' suite also runs maintainability/quality
+# queries which, on a large legacy C base kept aligned with ec-/Quake3e upstream,
+# produce thousands of findings we should not churn (it would break cherry-picks).
+# 'security-extended' keeps strong security coverage without the quality noise.
+queries:
+  - uses: security-extended
+
+# Do not raise alerts in vendored third-party libraries: we do not maintain them
+# (issues there go upstream), and they dominate the alert count.
+paths-ignore:
+  - code/libjpeg
+  - code/libcurl
+  - code/libogg
+  - code/libvorbis
+  - code/libsdl
+  - code/renderercommon/vulkan

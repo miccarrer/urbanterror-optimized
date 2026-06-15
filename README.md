@@ -84,5 +84,5 @@ id Software (Quake III Arena, GPL)
 
 ## License
 
-GPL v2 — see [LICENSE](LICENSE) / [COPYING.txt](COPYING.txt). Original id Software readme:
+GPL v2 — see [LICENSE](LICENSE). Original id Software readme:
 [docs/legal/id-readme.txt](docs/legal/id-readme.txt).
