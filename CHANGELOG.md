@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-15
+
+Modernization release — quality, security and developer-experience hardening on top of the
+0.1.0 foundations, plus the first UrT features (server cvars, tellme). UrT console tabs and
+demo playback remain deferred (need fresh reimplementation + in-game testing).
+
 ### Added
 - Governance & quality config: `CONTRIBUTING.md`, `SECURITY.md`, `CODEOWNERS`,
   GitHub issue/PR templates, `.clang-tidy` (M2); `CODE_OF_CONDUCT.md`, `ARCHITECTURE.md`,
@@ -51,5 +57,6 @@ Foundations release — modern base for Urban Terror Optimized, before UrT featu
 ### Removed
 - Quake3e/Q3A legacy documentation and the legacy `master` branch / date-based tags.
 
-[Unreleased]: https://github.com/miccarrer/urbanterror-optimized/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/miccarrer/urbanterror-optimized/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/miccarrer/urbanterror-optimized/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/miccarrer/urbanterror-optimized/releases/tag/v0.1.0

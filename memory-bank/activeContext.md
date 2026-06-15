@@ -24,8 +24,13 @@ flags durcissement PIE/RELRO (test JIT VM en jeu), optionnels (codecov, FUNDING)
 Les fondations ont atteint le rendement décroissant → pivoter vers la **livraison**. M5 quasi
 clos : cvars + tellme faits ; **referee fix absorbé par tellme** (réconcilié 2026-06-15) ;
 console-à-onglets / demo / dmaHD restent différés (réimpl + tests en jeu) et **ne bloquent pas**
-une release. CHANGELOG `[Unreleased]` consolidé (M2–M7). **Décisions en attente côté utilisateur** :
-numéro de version (v0.2.0 « modernisation » vs v1.0.0) et sort de dmaHD.
+une release.
+
+**Décisions prises (2026-06-15)** : prochaine release = **v0.2.0** (modernisation ; v1.0.0
+réservé à l'après console-onglets + demo) ; **dmaHD hors périmètre** (différé). CHANGELOG daté
+`[0.2.0] - 2026-06-15`. **Reste à faire (action utilisateur, push m'est refusé)** :
+`git tag v0.2.0 && git push origin v0.2.0` → déclenche `release.yml` (build multi-plateforme +
+provenance Sigstore). Après tag, la bannière de version affichera `v0.2.0` (versioning git-describe).
 
 **Notes techniques clés** (cf. AUDIT.md) :
 - `git describe` retombe sur le tag legacy `latest` → filtrer `--match 'v[0-9]*'` (= `v0.1.0-…`),

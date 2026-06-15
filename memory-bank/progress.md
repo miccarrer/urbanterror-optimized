@@ -103,8 +103,11 @@ runtime itératifs — non adaptées au port à l'aveugle. Différées jusqu'à 
 > ✅ **Hook clang-format corrigé** par l'utilisateur (`git clang-format -f`, via `bash -c`) :
 > formate uniquement les lignes modifiées. L'outil Edit est de nouveau utilisable sur `.c`/`.h`.
 
-### M6 — Release v1.0.0
-- [ ] Build test complet via CI ; tag `v1.0.0` ; CHANGELOG
+### M6 — Release **v0.2.0** (modernisation) ← **PROCHAINE ÉTAPE**
+- Cible révisée v1.0.0 → **v0.2.0** (décision utilisateur 2026-06-15) : console-onglets/demo
+  encore différés → pas un 1.0. dmaHD **hors périmètre** (différé).
+- [x] CI verte sur main ; CHANGELOG `[0.2.0] - 2026-06-15` consolidé
+- [ ] **Action utilisateur** : `git tag v0.2.0 && git push origin v0.2.0` → déclenche `release.yml`
 
 ### M7 — Qualité & durcissement (modernisation 2026) ← ✅ **MERGÉ sur main** (PR #1, 2026-06-15)
 > Issu de l'audit `AUDIT.md`. 8 commits mergés (`1a6a244f`), CI verte sur main (8/8 jobs).

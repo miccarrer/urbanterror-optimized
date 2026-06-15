@@ -145,17 +145,23 @@ Ordre : **M0 → M1 → M2 → M3 → M4** (fondations) **→ M5** (features) **
       tellme** (gating `chat_cmdMode`, voir `cl_keys.c:511-553`). Aucune action séparée requise.
 
 ### Optionnel
-- [ ] dmaHD (`213e0e5d`, ~1524 lignes) — décision en attente
+- [x] dmaHD (`213e0e5d`, ~1524 lignes) — **DIFFÉRÉ / hors périmètre** (décision utilisateur
+      2026-06-15). Masse de code optionnelle, faible priorité vs livrer ; réévaluable si
+      demande joueurs.
 
 ---
 
-## M6 — Release v1.0.0
+## M6 — Release **v0.2.0** (modernisation)
 
-**Risque : faible.**
+**Risque : faible.** Cible révisée → **v0.2.0** (décision 2026-06-15) : base solide + premières
+features, mais console-onglets/demo encore différés → pas encore un 1.0. `v1.0.0` reste le jalon
+final une fois ces features livrées.
 
-- [ ] Build test complet toutes plateformes via CI
-- [ ] Validation finale (`git status` propre, README à jour, build OK)
-- [ ] Tag `v1.0.0` + entrée `CHANGELOG.md`
+- [x] Build test complet toutes plateformes via CI (vert sur `main` après merge M7)
+- [x] `CHANGELOG.md` : entrée `[0.2.0] - 2026-06-15` consolidée
+- [ ] Validation finale (`git status` propre, README à jour, build OK) puis **tag `v0.2.0`** +
+      `git push origin v0.2.0` → déclenche `release.yml` (build multi-plateforme + provenance)
+- [ ] (futur) `v1.0.0` après console-onglets + demo UrT
 
 ---
 
