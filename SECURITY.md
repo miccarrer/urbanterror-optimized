@@ -30,3 +30,9 @@ This repository is the **engine** (forked from ec-/Quake3e / ioquake3). Issues i
 third-party libraries (libcurl, libjpeg, libogg, libvorbis, SDL2) should also be reported
 upstream when applicable. Game content and the Urban Terror game logic (QVM mod) are out of
 scope.
+
+## Static analysis
+
+CodeQL (`security-extended`) runs on every PR and weekly. How findings are triaged — and why we
+do not mass-rewrite upstream-aligned code — is documented in
+[docs/security-triage.md](docs/security-triage.md).

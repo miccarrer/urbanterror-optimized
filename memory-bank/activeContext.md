@@ -1,9 +1,27 @@
 # Active Context — Urban Terror Optimized
 
 ## Dernière mise à jour
-2026-06-15 — Session 4 : audit fondations + M7 (modernisation) **mergé sur main** (PR #1)
+2026-06-15 — Session 4 : audit + M7 mergé, v0.2.0 publiée, hygiène GitHub + triage CodeQL
 
-## Milestone actuel : M7 ✅ MERGÉ — prochaine cible : M6 (release)
+## Post-release : hygiène GitHub & sécurité (2026-06-15)
+
+Après la publication de **v0.2.0** (release dlopen, cf. plus bas), série de durcissements repo :
+- **Licence** : `COPYING.txt` (doublon byte-identique de `LICENSE`) supprimé → fin du double
+  onglet GitHub (PR #5).
+- **CodeQL** : config dédiée `.github/codeql/codeql-config.yml` — suite **`security-extended`**
+  (au lieu de `security-and-quality`) + **exclusion du code vendored** → alertes **~1279 → ~172**.
+  Triage documenté dans **`docs/security-triage.md`** (politique : pas de réécriture de masse du
+  code upstream ; on classe Fix / Won't-fix / Backlog). **8 alertes dismissées** (vérifiées FP :
+  localtime/ctime, path-injection `FS_BuildOSPath`, 2 strcpy pak sized-to-source). ~164 en backlog
+  (patterns upstream, surtout FP/entrées de confiance ; à trier au fil de l'eau, priorité aux
+  chemins atteignables depuis input non fiable : netcode, paks téléchargés).
+- **Dependabot** : alertes + security updates **activées** ; toutes les PR de bump mergées ;
+  **grouping** configuré (PR #11) → bumps d'actions futurs en une seule PR (déjà effectif, PR #12).
+- **cppcheck** : caché (`--cppcheck-build-dir` + actions/cache) → ~7 min → secondes.
+
+**État repo** : propre, aucune PR ouverte, CI verte.
+
+## Milestone (clos) : M7 ✅ MERGÉ — release v0.2.0 publiée
 
 **M7 — Qualité & durcissement** : déclenché par un audit demandé par l'utilisateur (verdict :
 fondations M0–M4 solides). Rapport dans **`AUDIT.md`**, suivi `ROADMAP.md` (M7). Livré en

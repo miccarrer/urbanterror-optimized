@@ -103,11 +103,19 @@ runtime itératifs — non adaptées au port à l'aveugle. Différées jusqu'à 
 > ✅ **Hook clang-format corrigé** par l'utilisateur (`git clang-format -f`, via `bash -c`) :
 > formate uniquement les lignes modifiées. L'outil Edit est de nouveau utilisable sur `.c`/`.h`.
 
-### M6 — Release **v0.2.0** (modernisation) ← **PROCHAINE ÉTAPE**
-- Cible révisée v1.0.0 → **v0.2.0** (décision utilisateur 2026-06-15) : console-onglets/demo
-  encore différés → pas un 1.0. dmaHD **hors périmètre** (différé).
-- [x] CI verte sur main ; CHANGELOG `[0.2.0] - 2026-06-15` consolidé
-- [ ] **Action utilisateur** : `git tag v0.2.0 && git push origin v0.2.0` → déclenche `release.yml`
+### M6 — Release **v0.2.0** (modernisation) ← ✅ **PUBLIÉE** (2026-06-15)
+- Cible révisée v1.0.0 → **v0.2.0** : console-onglets/demo différés → pas un 1.0. dmaHD hors périmètre.
+- [x] CI verte ; CHANGELOG `[0.2.0]` ; tag `v0.2.0` poussé → release GitHub générée (provenance Sigstore)
+- [x] Packaging release assaini ensuite : mode **dlopen** (client unique Vulkan + fallback OpenGL,
+      `BINARIES.txt`) au lieu de 2 binaires statiques au nommage trompeur (PR #3)
+
+### Post-release — Hygiène GitHub & sécurité (2026-06-15)
+- [x] Licence : `COPYING.txt` (doublon) supprimé → fin du double onglet (PR #5)
+- [x] CodeQL : suite `security-extended` + exclusion vendored (`.github/codeql/codeql-config.yml`)
+      → **~1279 → ~172** alertes ; triage documenté **`docs/security-triage.md`** ; **8 dismissées**
+      (FP vérifiés) ; ~164 backlog (patterns upstream, à trier au fil de l'eau)
+- [x] Dependabot : alertes + security updates activées ; PR de bump mergées ; **grouping** (PR #11/#12)
+- [x] cppcheck caché (build-dir + actions/cache) → ~7 min → secondes (PR #4)
 
 ### M7 — Qualité & durcissement (modernisation 2026) ← ✅ **MERGÉ sur main** (PR #1, 2026-06-15)
 > Issu de l'audit `AUDIT.md`. 8 commits mergés (`1a6a244f`), CI verte sur main (8/8 jobs).
