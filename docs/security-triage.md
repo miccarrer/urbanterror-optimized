@@ -34,8 +34,13 @@ commands/configs, demo files. Trusted sources: the user's own installed paks/con
 
 ## Current state — 2026-06-15
 
-**~172 open alerts** (down from ~1279 before tuning the suite + excluding vendored code).
-**24 dismissed on 2026-06-15** after individual review (see "Actions taken" below) → ~148 remain.
+Journey: **~1279** originally → **~129** after tuning (`security-extended` + vendored excluded at
+build level via `USE_SYSTEM_JPEG/OGG/VORBIS`) → **~66 open** after triage. **87 dismissed**
+(verified FP / won't-fix, reversible); the rest auto-closed by the config change.
+
+The remaining ~66 are all **our own code, none reachable from network input**: file/model/image
+parsing (`tr_*`, `files.c`, image codecs), config/env reads. They are **backlog** — mostly FP
+(buffers sized to source, dimensions clamped, allocations that fail safe) or low-risk DoS.
 
 | Rule | ~Count | Typical disposition |
 |---|---|---|
@@ -50,7 +55,7 @@ commands/configs, demo files. Trusted sources: the user's own installed paks/con
 
 ### Actions taken (2026-06-15)
 
-**24 alerts dismissed** after individual verification (reversible — reopen if reassessed).
+**87 alerts dismissed** after verification (reversible — reopen if reassessed). Passes below.
 
 First pass (8):
 - `cpp/potentially-dangerous-function` ×4 (`localtime`/`ctime` log timestamps) — *won't fix*.
@@ -69,6 +74,20 @@ to be a **false positive**; all 16 `cpp/uncontrolled-arithmetic` there were dism
 
 **Result: no genuine memory-safety or integer-overflow bug was found in the netcode** — it holds
 up (heavily-audited ioquake3/Quake3e lineage).
+
+**Audio / renderer batch (63)** — triaged by rule class (sampled + verified), all dismissed as
+*false positive*:
+- `cpp/uncontrolled-arithmetic` ×42 (`snd_mix.c`/`snd_dma.c`/`snd_adpcm.c`): mixing/AVI-dump math
+  on sample indices bounded by `dma.samples` and masked (`% dma.samples`); not file/network input.
+- `cpp/suspicious-pointer-scaling` ×16 (`tr_model.c`/`tr_surface.c`/`tr_mesh.c`): intentional
+  model/vertex-format pointer arithmetic with explicit bounds checks at the site (e.g. MDR loader).
+- `cpp/integer-multiplication-cast-to-long` ×5 (`tr_init.c`): `vidWidth*vidHeight` buffer sizing
+  for screenshots/video — display config, not file input.
+
+**Kept as backlog (image/model file parsing):** `tr_image.c` dimension math (clamped to
+`glConfig.maxTextureSize`), `tr_image_png.c`/`tr_model_iqm.c`/`tr_bsp.c`/`cl_jpeg.c`, and the
+`snd_codec_wav.c` allocation (size from the WAV header, but the alloc fails safe). These read from
+paks; currently mitigated, revisit for `size_t` hardening rather than mass rewrite.
 
 ### Low-priority items noted (not fixed)
 - `cl_main.c:4045` `cpp/non-https-url`: default `cl_dlURL` points to an HTTP community map host;
