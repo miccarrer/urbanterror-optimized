@@ -3799,10 +3799,14 @@ static void CL_NameRotate( void ) {
 	}
 
 	if ( token && token[0] ) {
-		// strip leading/trailing whitespace
+		// strip leading and trailing whitespace
+		int end;
 		while ( *token == ' ' || *token == '\t' )
 			token++;
 		Q_strncpyz( name, token, sizeof( name ) );
+		end = strlen( name );
+		while ( end > 0 && ( name[end - 1] == ' ' || name[end - 1] == '\t' ) )
+			name[--end] = '\0';
 		if ( name[0] ) {
 			Cvar_Set( "name", name );
 			Com_DPrintf( "name_rotate: set name to '%s' (index %d/%d)\n", name, nameRotateIndex + 1, count );
