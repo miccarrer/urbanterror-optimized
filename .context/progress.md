@@ -2,8 +2,15 @@
 
 ## État global du projet
 
-**Milestone actuel** : **M8 / Feature #1 — Identity Switching** (session 5, 2026-06-15).
-Branche `feature/identity-switching`. Fondations M0–M4 terminées ; M5 partiel ; M6 (release v0.2.0) publiée ; M7 terminé ; M8 Feature #1 implémentée (non commitée).
+**Milestone actuel** : **Feature #2 — download dir + `fs_downloadpath`** (session 8, 2026-06-16).
+Branche `feature/fs-downloadpath` (non poussée). Fondations M0–M4 terminées ; M5 partiel ; M6 (release v0.2.0) publiée ; M7 terminé ; Feature #1 (identity) mergée PR #20.
+
+**Session 8 (2026-06-16) — test en jeu** : a révélé un bug `fs_gamedir` (le dossier `download` enregistré
+dans `FS_Startup` écrasait `fs_gamedir` → écritures dans `q3ut4/download/`). Corrigé (`6398949c`). Plus
+affinage identity : denylist des 8 vestiges Q3 (`model`/`headmodel`/`team_*`/`sex`/`color1/2`/`handicap`),
+preview `listidentities` sans `model`, doc « sauver connecté en jeu » + note `race*` vs `model`
+(`3f93b6e6`, `c8dbe967`, `e6603912`). **Leçon** : userinfo du mod flaggé seulement après chargement cgame
+→ toujours sauver les identités **en jeu**.
 
 ---
 

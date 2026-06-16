@@ -1,11 +1,35 @@
 # Active Context — Urban Terror Optimized
 
 ## Dernière mise à jour
-2026-06-16 — Session 7 : feature #2 « download dir + fs_downloadpath » implémentée (build OK, à tester en jeu)
+2026-06-16 — Session 8 : test en jeu de la feature #2 → **bug `fs_gamedir` trouvé & corrigé** + affinage identity (denylist vestiges Q3). Build OK.
 
-## Feature #2 : Dossier de download `q3ut4/download` + `fs_downloadpath` ✅ (build OK)
+## Session 8 : correctifs issus du test en jeu (download + identity)
 
-**Branche** : `feature/fs-downloadpath` (1 commit `8bb05a5e`, **non poussé**, working tree propre)
+**Branche** : `feature/fs-downloadpath` — 4 commits ajoutés (`6398949c`→`e6603912`), **non poussés**, working tree propre.
+
+**Bug `fs_gamedir` (régression de la feature #2)** — `6398949c` `fix(fs)` :
+`FS_Startup` enregistre `<root>/q3ut4/download` via `FS_AddGameDirectory`, qui **écrase la globale
+`fs_gamedir`**. En jeu vanilla (pas de mod), rien ne la restaurait → `fs_gamedir` restait
+`q3ut4/download`, et **toutes** les écritures (q3config, identités, démos, screenshots) atterrissaient
+sous `q3ut4/download/`. Cassait aussi la feature identity (save dans `download/identities/`, load/règles
+cherchaient dans `identities/`). Corrigé : save/restore de `fs_gamedir` autour de l'enregistrement.
+
+**Affinage identity** (suite au test en jeu) :
+- `3f93b6e6` `refactor(client)` : denyliste les **8 vestiges Q3** inertes dans UrT —
+  `model`, `headmodel`, `team_model`, `team_headmodel`, `sex`, `color1`, `color2`, `handicap`.
+  Le **vrai perso** = `racered`/`raceblue`/`racefree` (menu Player Setup) ; la couleur visible = `cg_rgb` ;
+  fun items = `funred`/`funblue`. `model "sarge"` (stock) → fallback **perso féminin** par défaut.
+- `c8dbe967` `refactor(client)` : `listidentities` n'affiche plus `model` (denylisté) → juste le `name`.
+- `e6603912` `docs(cvars)` : doc « sauver **connecté en jeu** » (sinon userinfo incomplet) + note `race*` vs `model`.
+
+**⚠️ Leçon clé** : `saveidentity` capture le userinfo **live** → les cvars d'apparence du mod ne sont
+flaggés `CVAR_USERINFO` qu'**après chargement de la cgame** (donc connecté). Sauver au menu = profil
+incomplet (seules les clés userinfo de base du moteur). **À faire utilisateur** : re-`saveidentity` les
+profils existants en jeu (le `loadidentity` exécute le `.cfg` tel quel → vieilles lignes vestiges encore appliquées).
+
+## Feature #2 : Dossier de download `q3ut4/download` + `fs_downloadpath` ✅ (build OK, testé en jeu)
+
+**Branche** : `feature/fs-downloadpath` (commit initial `8bb05a5e` + fix `6398949c`, **non poussé**, working tree propre)
 
 **Objectif** : ranger les paks téléchargés dans `<root>/q3ut4/download/` (pas mélangés au game dir →
 backup/symlink) + cvar `fs_downloadpath` (racine configurable) pour partager un cache de download
