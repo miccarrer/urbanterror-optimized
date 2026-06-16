@@ -50,6 +50,7 @@ gameplay settings. Profiles are stored as `identities/<name>.cfg`.
 | Cvar | Default | Description |
 |------|:-------:|-------------|
 | `cl_identity` | `` | Name of the currently-loaded identity profile (auto-loaded at startup) |
+| `cl_identityRules` | `` | Per-server auto-identity: `pattern=profile; …` entries (see below) |
 
 ### Commands
 
@@ -58,6 +59,28 @@ gameplay settings. Profiles are stored as `identities/<name>.cfg`.
 | `saveidentity <name>` | Save current identity cvars to `identities/<name>.cfg` |
 | `loadidentity <name>` | Load identity from `identities/<name>.cfg` and set `cl_identity` |
 | `listidentities` | List all available profiles, with a name/model preview |
+| `currentidentity` | Show the active profile and any cvars changed since it was loaded |
+| `revertidentity` | Undo the last load / auto-rule (toggles back and forth; session-scoped) |
+
+### Per-server identity (`cl_identityRules`)
+
+`cl_identityRules` is a semicolon-separated list of `pattern=profile` entries. On
+`connect`, the server address/hostname you typed is matched against each pattern
+(`*`/`?` wildcards) and the **first matching** profile is loaded automatically —
+so you wear the right identity per context, chosen deterministically (not at
+random). Undo any auto-load with `revertidentity`.
+
+```
+set cl_identityRules "*clan.example.com*=clantag; *jump*=casual; *=main"
+```
+
+Suggested binds for quick manual control:
+
+```
+bind F5 "loadidentity main"
+bind F6 "loadidentity clantag"
+bind F7 revertidentity
+```
 
 ### Which cvars are saved
 
