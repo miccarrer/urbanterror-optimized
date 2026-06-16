@@ -4691,6 +4691,8 @@ void CL_Shutdown( const char *finalmsg, qboolean quit ) {
 	Cmd_RemoveCommand( "saveidentity" );
 	Cmd_RemoveCommand( "loadidentity" );
 	Cmd_RemoveCommand( "listidentities" );
+	Cmd_RemoveCommand( "revertidentity" );
+	Cmd_RemoveCommand( "currentidentity" );
 
 #ifdef USE_CURL
 	Com_DL_Cleanup( &download );
