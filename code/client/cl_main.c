@@ -3620,6 +3620,21 @@ static const char *const identity_cvar_denylist[] = {
     "cl_guid",         // engine-owned (CVAR_ROM), tied to the qkey
     "ip",              // set by the server
     "cl_anonymous",    // write-protected by q3ut4 in-game, not settable per profile
+    // Quake3 model/voice cvars that q3ut4 ignores: the player character is
+    // selected by racered/raceblue/racefree, and these stay stuck on their
+    // stock "sarge"/"male" values. Saving them is noise, and restoring them
+    // would overwrite nothing useful while looking like it controls the look.
+    "model",
+    "headmodel",
+    "team_model",
+    "team_headmodel",
+    "sex",
+    // More Quake3 vestiges q3ut4 does not use: color1/color2 are railgun trail
+    // colors (no railgun in UrT; the visible color is cg_rgb) and handicap is
+    // a max-health cap (UrT uses localized damage). Confirmed inert in-game.
+    "color1",
+    "color2",
+    "handicap",
     NULL };
 
 /*
