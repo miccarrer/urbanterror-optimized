@@ -3705,6 +3705,9 @@ static void CL_SaveIdentity_f( void ) {
 
 	FS_FCloseFile( f );
 
+	// the current look now *is* this profile, so make it the active identity
+	Cvar_Set( "cl_identity", Cmd_Argv( 1 ) );
+
 	Com_Printf( "Saved identity '%s' (%i cvars) to %s\n", Cmd_Argv( 1 ), count, filename );
 }
 
