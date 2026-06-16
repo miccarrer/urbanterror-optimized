@@ -82,6 +82,7 @@ cvar_t	*com_timedemo;
 cvar_t	*com_affinityMask;
 #endif
 static cvar_t *com_logfile;		// 1 = buffer log, 2 = flush after each print
+static cvar_t *com_logTimestamps; // 0 = omit timestamps for deterministic/diffable logs
 static cvar_t *com_showtrace;
 cvar_t	*com_version;
 static cvar_t *com_buildScript;	// for automated data building scripts
@@ -223,15 +224,20 @@ void FORMAT_PRINTF(1, 2) QDECL Com_Printf( const char *fmt, ... ) {
 				logfile = FS_FOpenFileWrite( logName );
 
 			if ( logfile != FS_INVALID_HANDLE ) {
-				struct tm *newtime;
-				time_t aclock;
-				char timestr[32];
+				// deterministic mode: omit the wall-clock date so logs are byte-diffable
+				if ( com_logTimestamps && !com_logTimestamps->integer ) {
+					Com_Printf( "logfile opened\n" );
+				} else {
+					struct tm *newtime;
+					time_t aclock;
+					char timestr[32];
 
-				time( &aclock );
-				newtime = localtime( &aclock );
-				strftime( timestr, sizeof( timestr ), "%a %b %d %X %Y", newtime );
+					time( &aclock );
+					newtime = localtime( &aclock );
+					strftime( timestr, sizeof( timestr ), "%a %b %d %X %Y", newtime );
 
-				Com_Printf( "logfile opened on %s\n", timestr );
+					Com_Printf( "logfile opened on %s\n", timestr );
+				}
 
 				if ( mode & 1 ) {
 					// force it to not buffer so we get valid
@@ -407,6 +413,91 @@ void NORETURN FORMAT_PRINTF(2, 3) QDECL Com_Error( errorParm_t code, const char 
 	Sys_Error( "%s", com_errorMessage );
 }
 
+// Tier-0 test harness: failing asserts raise the process exit code so scripted
+// .cfg runs (headless / CI) can signal pass/fail through the "quit" return code.
+static int com_exitCode = 0;
+
+/*
+=============
+Com_AssertCompare
+
+Evaluates "a <op> b". Numeric operators (== != < <= > >=) compare as floats;
+string operators (eq ne) compare verbatim.
+=============
+*/
+static qboolean Com_AssertCompare( const char *a, const char *op, const char *b ) {
+	if ( !strcmp( op, "eq" ) )
+		return (qboolean)( strcmp( a, b ) == 0 );
+	if ( !strcmp( op, "ne" ) )
+		return (qboolean)( strcmp( a, b ) != 0 );
+
+	{
+		const float fa = atof( a );
+		const float fb = atof( b );
+
+		if ( !strcmp( op, "==" ) )
+			return (qboolean)( fa == fb );
+		if ( !strcmp( op, "!=" ) )
+			return (qboolean)( fa != fb );
+		if ( !strcmp( op, "<" ) )
+			return (qboolean)( fa < fb );
+		if ( !strcmp( op, "<=" ) )
+			return (qboolean)( fa <= fb );
+		if ( !strcmp( op, ">" ) )
+			return (qboolean)( fa > fb );
+		if ( !strcmp( op, ">=" ) )
+			return (qboolean)( fa >= fb );
+	}
+
+	Com_Printf( S_COLOR_YELLOW "assert: unknown operator '%s' (use == != < <= > >= eq ne)\n", op );
+	return qfalse;
+}
+
+static void Com_AssertResult( qboolean ok, const char *a, const char *op, const char *b ) {
+	if ( ok ) {
+		Com_Printf( "ASSERT PASS: %s %s %s\n", a, op, b );
+	} else {
+		Com_Printf( S_COLOR_RED "ASSERT FAIL: %s %s %s\n", a, op, b );
+		com_exitCode = 1;
+	}
+}
+
+/*
+=============
+Com_Assert_f
+
+assert <a> <op> <b> — compares two literal values; a mismatch raises the exit code.
+=============
+*/
+static void Com_Assert_f( void ) {
+	if ( Cmd_Argc() != 4 ) {
+		Com_Printf( "usage: assert <a> <op> <b>   (op: == != < <= > >= eq ne)\n" );
+		return;
+	}
+	Com_AssertResult( Com_AssertCompare( Cmd_Argv( 1 ), Cmd_Argv( 2 ), Cmd_Argv( 3 ) ),
+	                  Cmd_Argv( 1 ), Cmd_Argv( 2 ), Cmd_Argv( 3 ) );
+}
+
+/*
+=============
+Com_AssertCvar_f
+
+assert_cvar <name> <op> <value> — compares a cvar's current value; mismatch raises the exit code.
+=============
+*/
+static void Com_AssertCvar_f( void ) {
+	char label[MAX_STRING_CHARS];
+	const char *val;
+
+	if ( Cmd_Argc() != 4 ) {
+		Com_Printf( "usage: assert_cvar <name> <op> <value>   (op: == != < <= > >= eq ne)\n" );
+		return;
+	}
+	val = Cvar_VariableString( Cmd_Argv( 1 ) );
+	Com_sprintf( label, sizeof( label ), "%s(=%s)", Cmd_Argv( 1 ), val );
+	Com_AssertResult( Com_AssertCompare( val, Cmd_Argv( 2 ), Cmd_Argv( 3 ) ),
+	                  label, Cmd_Argv( 2 ), Cmd_Argv( 3 ) );
+}
 
 /*
 =============
@@ -418,6 +509,14 @@ do the appropriate things.
 */
 void Com_Quit_f( void ) {
 	const char *p = Cmd_ArgsFrom( 1 );
+	int code = com_exitCode;
+
+	// "quit <n>": explicit numeric exit code (treated as a return code, not a
+	// shutdown reason string); overrides the assert-driven exit code.
+	if ( Cmd_Argc() == 2 && Q_isanumber( Cmd_Argv( 1 ) ) ) {
+		code = atoi( Cmd_Argv( 1 ) );
+		p = "";
+	}
 	// don't try to shutdown if we are in a recursive error
 	if ( !com_errorEntered ) {
 		// Some VMs might execute "quit" command directly,
@@ -433,7 +532,7 @@ void Com_Quit_f( void ) {
 		Com_Shutdown();
 		FS_Shutdown( qtrue );
 	}
-	Sys_Quit();
+	Sys_Quit( code );
 }
 
 
@@ -3834,6 +3933,8 @@ void Com_Init( char *commandLine ) {
 	FS_InitFilesystem();
 
 	com_logfile = Cvar_Get( "logfile", "0", CVAR_TEMP );
+	com_logTimestamps = Cvar_Get( "com_logTimestamps", "1", CVAR_TEMP );
+	Cvar_SetDescription( com_logTimestamps, "Include wall-clock timestamps in the log header. Set to 0 for deterministic, byte-diffable logs (test/CI golden output)." );
 	Cvar_CheckRange( com_logfile, "0", "4", CV_INTEGER );
 	Cvar_SetDescription( com_logfile, "System console logging:\n"
 		" 0 - disabled\n"
@@ -3947,6 +4048,8 @@ void Com_Init( char *commandLine ) {
 	}
 
 	Cmd_AddCommand( "quit", Com_Quit_f );
+	Cmd_AddCommand( "assert", Com_Assert_f );
+	Cmd_AddCommand( "assert_cvar", Com_AssertCvar_f );
 	Cmd_AddCommand( "changeVectors", MSG_ReportChangeVectors_f );
 	Cmd_AddCommand( "writeconfig", Com_WriteConfig_f );
 	Cmd_SetCommandCompletionFunc( "writeconfig", Cmd_CompleteWriteCfgName );

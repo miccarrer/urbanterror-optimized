@@ -126,17 +126,15 @@ void NORETURN FORMAT_PRINTF(1, 2) QDECL Sys_Error( const char *error, ... ) {
 Sys_Quit
 ==============
 */
-void NORETURN Sys_Quit( void ) {
-
+void NORETURN Sys_Quit( int code ) {
 	timeEndPeriod( 1 );
 
 	SetUnhandledExceptionFilter( NULL );
 
 	Sys_DestroyConsole();
 
-	exit( 0 );
+	exit( code );
 }
-
 
 /*
 ==============

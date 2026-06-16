@@ -287,16 +287,13 @@ void NORETURN Sys_Exit( int code )
 #endif
 }
 
-
-void NORETURN Sys_Quit( void )
-{
+void NORETURN Sys_Quit( int code ) {
 #ifndef DEDICATED
 	CL_Shutdown( "", qtrue );
 #endif
 
-	Sys_Exit( 0 );
+	Sys_Exit( code );
 }
-
 
 void Sys_Init( void )
 {
