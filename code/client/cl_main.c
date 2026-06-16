@@ -2116,12 +2116,13 @@ void CL_NextDownload( void )
 {
 	char *s;
 	char *remoteName, *localName;
+	char dlLocalName[MAX_OSPATH];
 	qboolean useCURL = qfalse;
 
 	// A download has finished, check whether this matches a referenced checksum
 	if(*clc.downloadName)
 	{
-		const char *zippath = FS_BuildOSPath(Cvar_VariableString("fs_homepath"), clc.downloadName, NULL );
+		const char *zippath = FS_BuildOSPath( FS_DownloadRoot(), clc.downloadName, NULL );
 
 		if(!FS_CompareZipChecksum(zippath))
 			Com_Error(ERR_DROP, "Incorrect checksum for file: %s", clc.downloadName);
@@ -2152,6 +2153,13 @@ void CL_NextDownload( void )
 			*s++ = '\0';
 		else
 			s = localName + strlen(localName); // point at the null byte
+
+		// store downloaded paks in <gamedir>/download instead of mixing them
+		// into the game dir root (loaded back via FS_Startup, shareable across
+		// clients with fs_downloadpath). The remote name is unchanged.
+		Com_sprintf( dlLocalName, sizeof( dlLocalName ), "%s/download/%s",
+		             FS_GetCurrentGameDir(), COM_SkipPath( localName ) );
+		localName = dlLocalName;
 
 #ifdef USE_CURL
 		if(!(cl_allowDownload->integer & DLF_NO_REDIRECT)) {
@@ -4520,8 +4528,9 @@ void CL_Init( void ) {
 	cl_dlDirectory = Cvar_Get( "cl_dlDirectory", "0", CVAR_ARCHIVE_ND );
 	Cvar_CheckRange( cl_dlDirectory, "0", "1", CV_INTEGER );
 	s = va( "Save downloads initiated by \\dlmap and \\download commands in:\n"
-		" 0 - current game directory\n"
-		" 1 - basegame (%s) directory\n", FS_GetBaseGameDir() );
+	        " 0 - current game /download directory\n"
+	        " 1 - basegame (%s) /download directory\n",
+	        FS_GetBaseGameDir() );
 	Cvar_SetDescription( cl_dlDirectory, s );
 
 	cl_reconnectArgs = Cvar_Get( "cl_reconnectArgs", "", CVAR_ARCHIVE_ND | CVAR_NOTABCOMPLETE );

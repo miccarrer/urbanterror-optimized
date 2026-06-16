@@ -731,7 +731,7 @@ static void CL_ParseDownload( msg_t *msg ) {
 			return;
 		}
 
-		clc.download = FS_SV_FOpenFileWrite( clc.downloadTempName );
+		clc.download = FS_Download_FOpenFileWrite( clc.downloadTempName );
 
 		if ( clc.download == FS_INVALID_HANDLE )
 		{
@@ -759,7 +759,7 @@ static void CL_ParseDownload( msg_t *msg ) {
 			clc.download = FS_INVALID_HANDLE;
 
 			// rename the file
-			FS_SV_Rename( clc.downloadTempName, clc.downloadName );
+			FS_Download_Rename( clc.downloadTempName, clc.downloadName );
 		}
 
 		// send intentions now

@@ -243,10 +243,10 @@ static size_t CL_cURL_CallbackWrite( void *buffer, size_t size, size_t nmemb, vo
 				clc.downloadName );
 			return (size_t)-1;
 		}
-		clc.download = FS_SV_FOpenFileWrite( clc.downloadTempName );
+		clc.download = FS_Download_FOpenFileWrite( clc.downloadTempName );
 		if ( clc.download == FS_INVALID_HANDLE ) {
-			Com_Error( ERR_DROP, "CL_cURL_CallbackWrite: failed to open %s for writing", 
-				clc.downloadTempName );
+			Com_Error( ERR_DROP, "CL_cURL_CallbackWrite: failed to open %s for writing",
+			           clc.downloadTempName );
 			return (size_t)-1;
 		}
 	}
@@ -404,7 +404,7 @@ void CL_cURL_PerformDownload( void )
 	}
 	CL_cURL_CloseDownload();
 	if ( msg->msg == CURLMSG_DONE && msg->data.result == CURLE_OK ) {
-		FS_SV_Rename( clc.downloadTempName, clc.downloadName );
+		FS_Download_Rename( clc.downloadTempName, clc.downloadName );
 		clc.downloadRestart = qtrue;
 	}
 	else {
@@ -792,9 +792,8 @@ static size_t Com_DL_CallbackWrite( void *ptr, size_t size, size_t nmemb, void *
 			return (size_t)-1;
 		}
 
-		dl->fHandle = FS_SV_FOpenFileWrite( dl->TempName );
-		if ( dl->fHandle == FS_INVALID_HANDLE ) 
-		{
+		dl->fHandle = FS_Download_FOpenFileWrite( dl->TempName );
+		if ( dl->fHandle == FS_INVALID_HANDLE ) {
 			return (size_t)-1;
 		}
 	}
@@ -962,6 +961,9 @@ qboolean Com_DL_Begin( download_t *dl, const char *localName, const char *remote
 		Q_strncpyz( dl->gameDir, FS_GetCurrentGameDir(), sizeof( dl->gameDir ) );
 	}
 
+	// keep downloaded paks in <gamedir>/download (see FS_Startup / fs_downloadpath)
+	Q_strcat( dl->gameDir, sizeof( dl->gameDir ), "/download" );
+
 	// try to extract game path from localName
 	// dl->Name should contain only pak name without game dir and extension
 	s = strrchr( localName, '/' );
@@ -1088,19 +1090,16 @@ qboolean Com_DL_Perform( download_t *dl )
 
 		Com_sprintf( name, sizeof( name ), "%s%c%s.pk3", dl->gameDir, PATH_SEP, dl->Name );
 
-		if ( !FS_SV_FileExists( name ) )
-		{
-			FS_SV_Rename( dl->TempName, name );
-		}
-		else
-		{
+		if ( !FS_Download_FileExists( name ) ) {
+			FS_Download_Rename( dl->TempName, name );
+		} else {
 			n = FS_GetZipChecksum( name );
 			Com_sprintf( name, sizeof( name ), "%s%c%s.%08x.pk3", dl->gameDir, PATH_SEP, dl->Name, n );
 
-			if ( FS_SV_FileExists( name ) )
-				FS_Remove( name );
+			if ( FS_Download_FileExists( name ) )
+				FS_Remove( FS_BuildOSPath( FS_DownloadRoot(), name, NULL ) );
 
-			FS_SV_Rename( dl->TempName, name );
+			FS_Download_Rename( dl->TempName, name );
 		}
 
 		Com_DL_Cleanup( dl );

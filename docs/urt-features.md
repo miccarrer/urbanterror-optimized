@@ -31,6 +31,9 @@ Features specific to Urban Terror Optimized, beyond the stock Quake3e / ioquake3
   auto-loaded at startup; `currentidentity` shows it and any drift, `revertidentity` undoes the
   last load. Per-server auto-identity via `cl_identityRules` (`pattern=profile`) picks the right
   profile on connect — clan tag on clan servers, casual name elsewhere. See [CVARS.md](CVARS.md).
+- **Downloaded paks in a `download/` subfolder** — auto-downloaded maps go to
+  `<root>/q3ut4/download/` instead of being mixed into the game dir, and the optional
+  `fs_downloadpath` cvar lets several installs share one download cache. See [CVARS.md](CVARS.md).
 
 ## Planned (M5 — see [ROADMAP.md](../ROADMAP.md))
 

@@ -86,6 +86,14 @@
 - **Valeur** : ⭐⭐⭐ Haute - Sécurité + fiabilité download
 - **Fichiers** : `code/client/cl_main.c`, `code/qcommon/files.c`
 
+### 9bis. 📁 Dossier de download `q3ut4/download` (`f92d24af`, `99f6edbb`) — ✅ INTÉGRÉ (2026-06-16)
+- **Description** : range les paks téléchargés dans `q3ut4/download/` au lieu de la racine du game dir
+- **Notre code** : ✅ réimplémenté proprement sur `feature/fs-downloadpath` (corrige fuite
+  `CopyString`, taille de buffer, incohérence write/read de slim) + ajout cvar `fs_downloadpath`
+  (racine configurable/partageable). UDP + cURL.
+- **Valeur** : ⭐⭐ Moyenne - hygiène fichiers + cache partagé multi-install
+- **Fichiers** : `code/qcommon/files.c`, `code/client/cl_main.c`, `code/client/cl_parse.c`, `code/client/cl_curl.c`
+
 ### 10. 🔧 Fix referee commands (`b834398f`)
 - **Description** : Fix pour commandes referee
 - **Notre code** : Absent

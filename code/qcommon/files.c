@@ -305,6 +305,8 @@ static  cvar_t          *fs_apppath;
 #endif
 static	cvar_t		*fs_steampath;
 
+static cvar_t *fs_downloadpath; // optional root for downloaded paks (fallback: fs_homepath)
+
 static	cvar_t		*fs_basepath;
 static	cvar_t		*fs_basegame;
 static	cvar_t		*fs_copyfiles;
@@ -871,13 +873,30 @@ static void FS_InitHandle( fileHandleData_t *fd ) {
 	fs_lastPakIndex = -1;
 }
 
+/*
+===========
+FS_DownloadRoot
+
+Writable root for downloaded paks: fs_downloadpath when set, otherwise
+fs_homepath. Lets several clients share one download cache (and keeps the
+downloaded paks out of the rest of the game dir).
+===========
+*/
+const char *FS_DownloadRoot( void ) {
+	if ( fs_downloadpath && fs_downloadpath->string[0] ) {
+		return fs_downloadpath->string;
+	}
+	return fs_homepath->string;
+}
 
 /*
 ===========
-FS_SV_FOpenFileWrite
+FS_FOpenFileWriteBase
+Open a file for writing relative to an arbitrary OS root (homepath, download
+path, ...). Shared by FS_SV_FOpenFileWrite and FS_Download_FOpenFileWrite.
 ===========
 */
-fileHandle_t FS_SV_FOpenFileWrite( const char *filename ) {
+static fileHandle_t FS_FOpenFileWriteBase( const char *base, const char *filename ) {
 	char *ospath;
 	fileHandle_t	f;
 	fileHandleData_t *fd;
@@ -890,7 +909,7 @@ fileHandle_t FS_SV_FOpenFileWrite( const char *filename ) {
 		return FS_INVALID_HANDLE;
 	}
 
-	ospath = FS_BuildOSPath( fs_homepath->string, filename, NULL );
+	ospath = FS_BuildOSPath( base, filename, NULL );
 
 	f = FS_HandleForFile();
 	fd = &fsh[ f ];
@@ -922,6 +941,24 @@ fileHandle_t FS_SV_FOpenFileWrite( const char *filename ) {
 	return f;
 }
 
+/*
+===========
+FS_SV_FOpenFileWrite
+===========
+*/
+fileHandle_t FS_SV_FOpenFileWrite( const char *filename ) {
+	return FS_FOpenFileWriteBase( fs_homepath->string, filename );
+}
+
+/*
+===========
+FS_Download_FOpenFileWrite
+Like FS_SV_FOpenFileWrite but targets the download root (FS_DownloadRoot).
+===========
+*/
+fileHandle_t FS_Download_FOpenFileWrite( const char *filename ) {
+	return FS_FOpenFileWriteBase( FS_DownloadRoot(), filename );
+}
 
 /*
 ===========
@@ -1011,7 +1048,7 @@ int FS_SV_FOpenFileRead( const char *filename, fileHandle_t *fp ) {
 FS_SV_Rename
 ===========
 */
-void FS_SV_Rename( const char *from, const char *to ) {
+static void FS_RenameBase( const char *base, const char *from, const char *to ) {
 	const char			*from_ospath, *to_ospath;
 
 	if ( !fs_searchpaths ) {
@@ -1023,8 +1060,8 @@ void FS_SV_Rename( const char *from, const char *to ) {
 	// S_ClearSoundBuffer();
 #endif
 
-	from_ospath = FS_BuildOSPath( fs_homepath->string, from, NULL );
-	to_ospath = FS_BuildOSPath( fs_homepath->string, to, NULL );
+	from_ospath = FS_BuildOSPath( base, from, NULL );
+	to_ospath = FS_BuildOSPath( base, to, NULL );
 
 	if ( fs_debug->integer ) {
 		Com_Printf( "FS_SV_Rename: %s --> %s\n", from_ospath, to_ospath );
@@ -1037,6 +1074,33 @@ void FS_SV_Rename( const char *from, const char *to ) {
 	}
 }
 
+void FS_SV_Rename( const char *from, const char *to ) {
+	FS_RenameBase( fs_homepath->string, from, to );
+}
+
+// Like FS_SV_Rename but operates within the download root (FS_DownloadRoot).
+void FS_Download_Rename( const char *from, const char *to ) {
+	FS_RenameBase( FS_DownloadRoot(), from, to );
+}
+
+/*
+===========
+FS_Download_FileExists
+Test for a file under the download root only (used to dedup downloaded paks).
+===========
+*/
+qboolean FS_Download_FileExists( const char *file ) {
+	FILE *f;
+	const char *testpath;
+
+	testpath = FS_BuildOSPath( FS_DownloadRoot(), file, NULL );
+	f = Sys_FOpen( testpath, "rb" );
+	if ( f ) {
+		fclose( f );
+		return qtrue;
+	}
+	return qfalse;
+}
 
 /*
 ===========
@@ -4739,6 +4803,9 @@ static void FS_Startup( void ) {
 	Cvar_SetDescription( fs_basegame, "Write-protected CVAR specifying the path to the base game(s) folder(s), separated by '/'." );
 	fs_steampath = Cvar_Get( "fs_steampath", Sys_SteamPath(), CVAR_INIT | CVAR_PROTECTED | CVAR_PRIVATE );
 
+	// optional shared/dedicated root for downloaded paks; empty -> use fs_homepath
+	fs_downloadpath = Cvar_Get( "fs_downloadpath", "", CVAR_INIT | CVAR_PROTECTED | CVAR_PRIVATE );
+
 	/* parse fs_basegame cvar */
 	if ( basegame_cnt == 0 || Q_stricmp( basegame, fs_basegame->string ) ) {
 		Q_strncpyz( basegame_str, fs_basegame->string, sizeof( basegame_str ) );
@@ -4826,6 +4893,13 @@ static void FS_Startup( void ) {
 		for ( i = 0; i < basegame_cnt; i++ ) {
 			FS_AddGameDirectory( fs_homepath->string, basegames[i] );
 		}
+	}
+
+	// downloaded paks are stored in <downloadRoot>/<gamedir>/download (kept apart
+	// from the rest of the game dir, and shareable across clients via
+	// fs_downloadpath); register that dir so they load after FS_Restart.
+	if ( FS_DownloadRoot()[0] ) {
+		FS_AddGameDirectory( FS_DownloadRoot(), va( "%s/download", FS_GetCurrentGameDir() ) );
 	}
 
 	// check for additional game folder for mods

@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   active profile (`cl_identity`) is auto-loaded at startup; `currentidentity` reports it and any
   drift, `revertidentity` is a one-level session undo. Per-server auto-identity via
   `cl_identityRules` (`pattern=profile`) auto-loads the matching profile on connect.
+- Downloaded paks are now stored in a `download/` subfolder of the game dir
+  (`<root>/q3ut4/download/`) instead of being mixed into the game dir root, keeping them apart
+  from configs/demos for easier backup. New init-only cvar `fs_downloadpath` overrides the root
+  so several engine installs (with separate homepaths) can share one download cache. Applies to
+  both UDP and HTTP/cURL downloads. (Reworked from `omg-urt/urbanterror-slim`.)
 
 ## [0.2.0] - 2026-06-15
 

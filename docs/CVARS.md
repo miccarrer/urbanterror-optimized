@@ -110,6 +110,29 @@ storage** as your main `q3config.cfg`. Two consequences:
 > identifies players by `cl_guid` (derived from your qkey), not by name. Profiles
 > are a convenience for managing your in-game appearance, nothing more.
 
+## Client — downloaded paks location
+
+Auto-downloaded paks (UDP and HTTP/cURL, `\dlmap`, `\download`) are written to a
+dedicated **`download/` subfolder** of the game dir instead of being mixed into
+the game dir root — i.e. `<root>/q3ut4/download/`. This keeps downloaded content
+apart from your configs/demos/screenshots (handy for backup or symlinking) and is
+loaded back automatically after the post-download `FS_Restart`.
+
+| Cvar | Default | Meaning |
+|------|---------|---------|
+| `fs_downloadpath` | `` (→ `fs_homepath`) | OS path used as the **root** for the `download/` folder. Set it to a shared location so several engine installs share one download cache. Init-only (`+set fs_downloadpath …`). |
+
+```
+# share one download cache across two clients that keep separate homepaths:
++set fs_downloadpath ~/.local/share/urbanterror-shared
+# downloads then land in ~/.local/share/urbanterror-shared/q3ut4/download/
+```
+
+When `fs_downloadpath` is empty, the root is `fs_homepath` (downloads go to
+`<homepath>/q3ut4/download/`). The download folder is added to the search path on
+startup/restart, so a downloaded pak is found just like any other; pure-server
+validation is by checksum and is unaffected by the subfolder.
+
 ---
 
-*Remaining M5 features (tabbed console, tellme, UrT demo) are tracked in [ROADMAP.md](../ROADMAP.md).*
+*Remaining M5 features (UrT demo) are tracked in [ROADMAP.md](../ROADMAP.md).*

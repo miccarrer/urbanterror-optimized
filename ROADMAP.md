@@ -224,6 +224,18 @@ projet « le plus moderne possible » : tests, sécurité CI, build, env reprodu
 - **Compat** : ✅ 100% local (userinfo keys déjà transportées par les serveurs legacy)
 - **Statut** : ✅ Implémenté, build OK. Voir [CVARS.md](docs/CVARS.md)
 
+### Feature #2 — Dossier de download `q3ut4/download` + `fs_downloadpath` ✅ (2026-06-16)
+- **Branche** : `feature/fs-downloadpath`
+- **Cas d'usage** : ne pas mélanger les paks téléchargés avec le reste de `q3ut4` (backup/symlink),
+  et partager un cache de download entre plusieurs installs ayant des homepaths distincts.
+- **Comportement** : downloads (UDP + HTTP/cURL, `\dlmap`/`\download`) écrits dans
+  `<root>/q3ut4/download/`, enregistré au search path (chargé après `FS_Restart`).
+- **Cvar** : `fs_downloadpath` (init-only ; vide → `fs_homepath`) = racine du dossier `download/`.
+- **Origine** : réimplémentation propre des commits slim `f92d24af` + `99f6edbb` (corrige fuite
+  `CopyString`, taille de buffer, incohérence write/read) + ajout de la racine configurable.
+- **Pure** : validation par checksum → insensible au sous-dossier (à confirmer en jeu).
+- **Statut** : ✅ Implémenté, build OK (client+serveur). Voir [CVARS.md](docs/CVARS.md)
+
 ---
 
 ## 📋 Ordre d'exécution
