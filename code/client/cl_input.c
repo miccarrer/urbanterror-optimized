@@ -82,6 +82,7 @@ static cvar_t *cl_packetdup;
 
 static cvar_t *m_pitch;
 static cvar_t *m_yaw;
+static cvar_t *m_dpi;
 static cvar_t *m_forward;
 static cvar_t *m_side;
 static cvar_t *m_filter;
@@ -890,6 +891,49 @@ void CL_SendCmd( void ) {
 	CL_WritePacket( 0 );
 }
 
+/*
+============
+CL_Cm360_f
+
+Mouse sensitivity <-> cm/360 converter: the physical distance the mouse travels
+for a full 360-degree in-game turn. With no argument it prints the current
+cm/360; with a value it sets "sensitivity" to match that cm/360.
+
+A 360 turn needs 360/(sensitivity*m_yaw) mouse counts; counts/m_dpi is inches, so
+cm/360 = 360 * 2.54 / (m_dpi * sensitivity * m_yaw).
+============
+*/
+static void CL_Cm360_f( void ) {
+	const float k = 360.0f * 2.54f; // counts->cm numerator (inch = 2.54 cm)
+	float dpi = m_dpi->value;
+	float yaw = m_yaw->value;
+	float sens, cm;
+
+	if ( dpi <= 0.0f || yaw <= 0.0f ) {
+		Com_Printf( "cm360: requires m_dpi > 0 and m_yaw > 0 (m_dpi=%g, m_yaw=%g)\n", dpi, yaw );
+		return;
+	}
+
+	if ( Cmd_Argc() < 2 ) {
+		sens = cl_sensitivity->value;
+		if ( sens <= 0.0f ) {
+			Com_Printf( "cm360: sensitivity must be > 0 to report cm/360\n" );
+			return;
+		}
+		Com_Printf( "%.2f cm/360  (sensitivity %g, m_dpi %g, m_yaw %g)\n",
+		            k / ( dpi * sens * yaw ), sens, dpi, yaw );
+		return;
+	}
+
+	cm = atof( Cmd_Argv( 1 ) );
+	if ( cm <= 0.0f ) {
+		Com_Printf( "cm360: target must be > 0\n" );
+		return;
+	}
+	sens = k / ( dpi * cm * yaw );
+	Cvar_SetValue( "sensitivity", sens );
+	Com_Printf( "sensitivity %g  (= %.2f cm/360 at m_dpi %g, m_yaw %g)\n", sens, cm, dpi, yaw );
+}
 
 /*
 ============
@@ -897,6 +941,7 @@ CL_InitInput
 ============
 */
 void CL_InitInput( void ) {
+	Cmd_AddCommand( "cm360", CL_Cm360_f );
 	Cmd_AddCommand ("centerview",IN_CenterView);
 
 	Cmd_AddCommand ("+moveup",IN_UpDown);
@@ -1009,6 +1054,9 @@ void CL_InitInput( void ) {
 	Cvar_SetDescription( m_pitch, "Set the up and down movement distance of the player in relation to how much the mouse moves." );
 	m_yaw = Cvar_Get( "m_yaw", "0.022", CVAR_ARCHIVE_ND );
 	Cvar_SetDescription( m_yaw, "Set the speed at which the player's screen moves left and right while using the mouse." );
+	m_dpi = Cvar_Get( "m_dpi", "800", CVAR_ARCHIVE_ND );
+	Cvar_CheckRange( m_dpi, "1", "100000", CV_INTEGER );
+	Cvar_SetDescription( m_dpi, "Mouse DPI/CPI, used by the 'cm360' sensitivity converter. Set it to your mouse's DPI." );
 	m_forward = Cvar_Get( "m_forward", "0.25", CVAR_ARCHIVE_ND );
 	Cvar_SetDescription( m_forward, "Set the back and forth movement distance of the player in relation to how much the mouse moves." );
 	m_side = Cvar_Get( "m_side", "0.25", CVAR_ARCHIVE_ND );
