@@ -47,6 +47,23 @@ Les renderers peuvent être :
 - Commands : Fonctions appelables depuis la console
 - Le système est dans `code/qcommon/cvar.c` et `code/qcommon/cmd.c`
 
+## Test & vérification headless (session 9)
+
+Le moteur se pilote **headless et install-free** pour vérifier le comportement runtime — point
+d'entrée : `make smoke` (serveur), `make smoke-client` (client via null renderer + `cl_noUI`),
+ou `scripts/headless` ad hoc. Asserts auto-vérifiants (`assert`, `assert_cvar`, `assert_cvar_flag`,
+`assert_command`, `assert_file`) → code de sortie. Null renderer `code/renderernull/`. Suites en CI
+(`integration`, `integration-asan`). Détails : `tests/integration/README.md`, `docs/FEATURE_IDEAS.md`
+§ Autonomie de l'agent.
+
+## Convention de travail — propositions proactives d'outillage
+
+L'agent est **encouragé à proposer proactivement** de nouvelles solutions améliorant son autonomie,
+le harnais de test, les workflows CI et l'outillage dev — pas seulement à exécuter la tâche demandée.
+À surfacer aux moments naturels (après une livraison, face à une friction, devant un manque
+tests/CI). Proposer concrètement (accroches + effort estimé), recommander une priorité, laisser le
+choix à l'utilisateur ; ne pas spammer ni dérailler la tâche en cours, et respecter une dépriorisation.
+
 ## Conventions de codage
 
 ### Style C (Quake3/ioq3)
