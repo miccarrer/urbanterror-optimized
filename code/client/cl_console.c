@@ -89,6 +89,7 @@ cvar_t		*con_autoclear;
 cvar_t		*con_notifytime;
 cvar_t		*con_scale;
 cvar_t *con_tabs; // draw the tab bar / enable tabbed console
+cvar_t *con_tabScale; // tab-title font size, multiple of the body font
 
 int			g_console_field_width;
 
@@ -503,6 +504,9 @@ void Con_Init( void )
 	Cvar_SetDescription( con_scale, "Console font size scale." );
 	con_tabs = Cvar_Get( "con_tabs", "1", CVAR_ARCHIVE_ND );
 	Cvar_SetDescription( con_tabs, "Show the tabbed-console tab bar (All/Chat); use con_nexttab/con_prevtab to switch." );
+	con_tabScale = Cvar_Get( "con_tabScale", "1.25", CVAR_ARCHIVE_ND );
+	Cvar_CheckRange( con_tabScale, "1.0", "3.0", CV_FLOAT );
+	Cvar_SetDescription( con_tabScale, "Tab-title font size as a multiple of the console body font (1.0 = same size)." );
 
 	Field_Clear( &g_consoleField );
 	g_consoleField.widthInChars = g_console_field_width;
@@ -858,6 +862,31 @@ static void Con_DrawNotify( void )
 	}
 }
 
+/*
+================
+Con_DrawScaledChar
+
+Like SCR_DrawSmallChar but at an arbitrary pixel size, so the tab titles can
+be drawn a bit larger than the body text. Drawn in native screen space.
+================
+*/
+static void Con_DrawScaledChar( int x, int y, int w, int h, int ch ) {
+	int row, col;
+	float frow, fcol;
+	const float size = 0.0625f;
+
+	ch &= 255;
+	if ( ch == ' ' ) {
+		return;
+	}
+
+	row = ch >> 4;
+	col = ch & 15;
+	frow = row * size;
+	fcol = col * size;
+
+	re.DrawStretchPic( x, y, w, h, fcol, frow, fcol + size, frow + size, cls.charSetShader );
+}
 
 /*
 ================
@@ -949,17 +978,46 @@ static void Con_DrawSolidConsole( float frac ) {
 		static const vec4_t bgActive = { 0.20f, 0.20f, 0.24f, 1.00f };
 		static const vec4_t bgInactive = { 0.07f, 0.07f, 0.09f, 1.00f };
 		const float *red = g_color_table[ColorIndex( COLOR_RED )];
-		int th = smallchar_height + 4;
-		int ty = lines; // hang the tabs just below the console panel
-		int tx = smallchar_width;
-		int t, k, tw;
+		// tab titles are drawn a bit larger than the body text (con_tabScale)
+		float tscale = con_tabScale->value;
+		int cw, chh, th, ty, tx, tpad, t, k, tw;
+
+		// con_tabScale is range-checked at registration, but clamp the derived
+		// pixel sizes to explicit bounds so the tab-layout arithmetic below is
+		// provably finite (keeps CodeQL's uncontrolled-arithmetic check satisfied).
+		if ( tscale < 1.0f )
+			tscale = 1.0f;
+		else if ( tscale > 3.0f )
+			tscale = 3.0f;
+		cw = (int)( smallchar_width * tscale );
+		chh = (int)( smallchar_height * tscale );
+		// clamp on both sides: a closed [1,256] range lets the analyzer prove the
+		// width/position products below cannot overflow (an upper bound alone
+		// leaves cw potentially negative, which still trips the multiply check).
+		if ( cw < 1 )
+			cw = 1;
+		else if ( cw > 256 )
+			cw = 256;
+		if ( chh < 1 )
+			chh = 1;
+		else if ( chh > 256 )
+			chh = 256;
+		th = chh + 4;
+		ty = lines; // hang the tabs just below the console panel
+		tx = smallchar_width;
+		tpad = ( th - chh ) / 2; // vertical centering of the title glyphs
 
 		// keep them on-screen when the console is fully open (frac == 1)
 		if ( ty + th > cls.glconfig.vidHeight )
 			ty = cls.glconfig.vidHeight - th;
 		for ( t = 0; t < NUM_CON; t++ ) {
 			qboolean active = ( t == con_iActive );
-			tw = ( (int)strlen( con_names[t] ) + 2 ) * smallchar_width;
+			// bound the title length with a literal so the width/position
+			// products below have both factors bounded (CodeQL-clean overflow).
+			int nlen = (int)strlen( con_names[t] );
+			if ( nlen > 32 )
+				nlen = 32;
+			tw = ( nlen + 2 ) * cw;
 
 			re.SetColor( active ? bgActive : bgInactive );
 			re.DrawStretchPic( tx, ty, tw, th, 0, 0, 0, 0, cls.whiteShader );
@@ -970,8 +1028,8 @@ static void Con_DrawSolidConsole( float frac ) {
 			re.DrawStretchPic( tx, ty + th - 2, tw, 2, 0, 0, 0, 0, cls.whiteShader ); // bottom
 
 			re.SetColor( g_color_table[ColorIndex( active ? COLOR_YELLOW : COLOR_WHITE )] );
-			for ( k = 0; con_names[t][k]; k++ )
-				SCR_DrawSmallChar( tx + ( k + 1 ) * smallchar_width, ty + 2, con_names[t][k] );
+			for ( k = 0; k < nlen; k++ )
+				Con_DrawScaledChar( tx + ( k + 1 ) * cw, ty + tpad, cw, chh, con_names[t][k] );
 
 			tx += tw;
 		}

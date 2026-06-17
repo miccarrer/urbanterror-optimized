@@ -188,6 +188,28 @@ To match another game, read its cm/360 (e.g. from its own converter) and pass it
 > Set `m_dpi` to the **effective** DPI the mouse really emits and `cm360` will match
 > the feel exactly.
 
+## Client — tabbed console
+
+The console has category tabs (e.g. **All** / **Chat**): every message goes to *All*,
+while routed categories (chat, frags…) also collect on their own tab. Switch tabs with
+`con_nexttab` / `con_prevtab` (or the mouse, in the open console).
+
+| Cvar | Default | Description |
+|------|:-------:|-------------|
+| `con_tabs` | `1` | Show the tab bar / enable the tabbed console. `0` = classic single console. |
+| `con_tabScale` | `1.25` | Tab-title font size as a multiple of the console body font (`1.0` = same size). Range `1.0`–`3.0`. |
+
+| Command | Effect |
+|---------|--------|
+| `con_nexttab` | Switch to the next tab. |
+| `con_prevtab` | Switch to the previous tab. |
+
+```
+\con_tabScale 1.25     # tab titles 25% larger than the body text (default)
+bind PGUP con_prevtab
+bind PGDN con_nexttab
+```
+
 ---
 
 *Remaining M5 features (UrT demo) are tracked in [ROADMAP.md](../ROADMAP.md).*
