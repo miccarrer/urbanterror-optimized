@@ -298,23 +298,37 @@ Recharge les shaders à chaud pendant le dev sans relancer le jeu.
 > chaîne visée : `make → lancer headless → piloter par script → lire un résultat machine →
 > assert via code de sortie`. Implémenté par tiers, du moins cher au plus cher.
 
-### Tier 0 — oracle scriptable (quasi gratuit)
+### Tier 0 — oracle scriptable ✅ livré
 
-**`quit <code>` → vrai code de sortie** 🆕
-`Sys_Quit` force aujourd'hui `Sys_Exit(0)` (`unix_main.c:291`) → un script ne peut jamais
-signaler un échec. `Sys_Exit(int)` accepte déjà un code (`unix_main.c:274`). `Com_Quit_f`
-(`common.c:419`) lit un arg optionnel et le propage.
-- **Compat** : ✅ local, défaut inchangé (0).
+- **`quit <code>`** → vrai code de sortie (`Sys_Quit(int)`). ⚠️ propre seulement en build
+  release (`Sys_Exit` a `assert(code==0)` hors-NDEBUG).
+- **Asserts auto-vérifiants** (impriment `PASS`/`FAIL`, un FAIL arme le code de sortie) :
+  - `assert <a> <op> <b>` — ops num. `== != < <= > >=`, chaînes `eq`/`ne`.
+  - `assert_cvar <name> <op> <value>` — compare la valeur d'une cvar.
+  - `assert_cvar_flag <name> <FLAG>` — vérifie qu'une cvar porte un flag `CVAR_*`
+    (ARCHIVE/USERINFO/SERVERINFO/SYSTEMINFO/INIT/LATCH/ROM/CHEAT/TEMP/…). Idéal pour vérifier
+    la **justesse d'enregistrement** (ex. cvar d'identité bien `CVAR_USERINFO`).
+  - `assert_command <name>` — vérifie qu'une commande console est enregistrée.
+  - `assert_file <path>` — vérifie qu'un fichier existe dans le **chemin d'écriture**
+    (`fs_homepath/fs_gamedir`). Pile pour les features qui écrivent : download, démo, screenshot.
+- **`com_logTimestamps 0`** — log sans date (sortie « golden » diffable au byte près).
 
-**`assert` / `assert_cvar <name> <op> <value>`** 🆕
-Commande console qui imprime `PASS`/`FAIL` et arme un flag d'échec global, lu comme code de
-sortie au `quit`. Brique qui rend les scripts `.cfg` **auto-vérifiants**.
-- **Accroche** : `Cvar_VariableValue` + `Cmd_AddCommand` (`cmd.c`/`common.c`).
+### Tier 0.5 — durcissement CI ✅ livré
 
-**Mode log déterministe (`com_logTimestamps 0`)** 🆕
-Le log passe par un sink unique (`common.c:208`) avec timestamps → non-diffable. Sans
-timestamps = sortie « golden » comparable au byte près.
-- **Accroche** : chemin `com_logfile` (`common.c:208`).
+- **Smoke sous ASan/UBSan** : job CI `integration-asan` rejoue la suite serveur compilée avec
+  `-fsanitize=address,undefined` → **chaque test fonctionnel devient un test mémoire/UB** sur les
+  chemins exercés (`ASAN_OPTIONS=detect_leaks=0`, la cible `release` propage désormais
+  `EXTRA_LDFLAGS`).
+
+### Idées de suite (harnais)
+
+- **Scripting cfg conditionnel** : `exec_if <cvar> <op> <value> <cmd>` (ou `if`) — utile pour des
+  cas adaptatifs (skip si une cvar absente, brancher selon l'arch). **Recommandation** : se limiter
+  aux **conditions** (cheap, faible risque dans le cbuf) ; garder boucles/orchestration complexe
+  dans `run.sh` (le shell a déjà de vraies boucles/conditions) plutôt que d'étendre le cbuf en
+  langage de script (risque overflow/boucles infinies, maintenance). Voir aussi `vstr`.
+- **`wait <frames>` / `waitms`** — débloque les asserts **asynchrones** (download/connexion terminés).
+- **`assert_log <substr>`** — asserter qu'une chaîne est apparue dans la console (scan buffer).
 
 ### Tier 1 — headless + runner (le vrai déblocage)
 

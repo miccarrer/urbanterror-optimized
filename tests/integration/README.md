@@ -49,7 +49,17 @@ assert foo eq foo
 quit
 ```
 
-`assert` operators: `== != < <= > >=` (numeric) and `eq` / `ne` (string).
+Available assert commands:
+
+| Command | Checks |
+|---------|--------|
+| `assert <a> <op> <b>` | two literals; ops `== != < <= > >=` (numeric), `eq` / `ne` (string) |
+| `assert_cvar <name> <op> <value>` | a cvar's current value (same ops) |
+| `assert_cvar_flag <name> <FLAG>` | the cvar exists and carries a `CVAR_*` flag (e.g. `USERINFO`, `ARCHIVE`, `ROM`, `INIT`, `TEMP`…) |
+| `assert_command <name>` | a console command is registered |
+| `assert_file <path>` | a file exists in the **write path** (`fs_homepath/fs_gamedir`) — use it after `writeconfig`/a download/a demo/screenshot to check it landed |
+
+A failing assert prints `ASSERT FAIL` and makes the process exit non-zero.
 
 ## How it works
 
