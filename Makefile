@@ -774,7 +774,7 @@ debug:
 	@$(MAKE) targets B=$(BD) CFLAGS="$(CFLAGS) $(DEBUG_CFLAGS) $(EXTRA_CFLAGS)" LDFLAGS="$(LDFLAGS) $(DEBUG_LDFLAGS) $(EXTRA_LDFLAGS)" V=$(V)
 
 release:
-	@$(MAKE) targets B=$(BR) CFLAGS="$(CFLAGS) $(RELEASE_CFLAGS) $(EXTRA_CFLAGS)" V=$(V)
+	@$(MAKE) targets B=$(BR) CFLAGS="$(CFLAGS) $(RELEASE_CFLAGS) $(EXTRA_CFLAGS)" LDFLAGS="$(LDFLAGS) $(EXTRA_LDFLAGS)" V=$(V)
 
 # Headless integration smoke test: build just the dedicated server and run the
 # assert-driven .cfg suite in tests/integration/ (no game install / pk3s needed).

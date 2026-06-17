@@ -753,6 +753,16 @@ static cmd_function_t *Cmd_FindCommand( const char *cmd_name )
 	return NULL;
 }
 
+/*
+============
+Cmd_Exists
+
+Returns qtrue if a command with this name is registered.
+============
+*/
+qboolean Cmd_Exists( const char *cmd_name ) {
+	return (qboolean)( Cmd_FindCommand( cmd_name ) != NULL );
+}
 
 /*
 ============

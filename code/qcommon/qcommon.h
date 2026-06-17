@@ -514,6 +514,8 @@ void	Cmd_AddCommand( const char *cmd_name, xcommand_t function );
 void	Cmd_RemoveCommand( const char *cmd_name );
 void	Cmd_RemoveCgameCommands( void );
 
+qboolean Cmd_Exists( const char *cmd_name );
+
 typedef void (*completionFunc_t)( const char *args, int argNum );
 
 // don't allow VMs to remove system commands

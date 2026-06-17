@@ -131,6 +131,31 @@ jobs:
       - name: Headless client smoke tests
         run: make smoke-client CC="ccache gcc"
 
+  integration-asan:
+    name: integration (ASan/UBSan)
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          sudo apt-get -qq update
+          sudo apt-get -y install libcurl4-openssl-dev mesa-common-dev libxxf86dga-dev libxrandr-dev libxxf86vm-dev libasound-dev libsdl2-dev
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          submodules: recursive
+      - uses: hendrikmuhs/ccache-action@d62db5f07c26379fc4b4e0916f098a92573c3b03 # v1.2.23
+        with:
+          key: smoke-asan-${{ github.job }}
+      # Same headless server suite, but built under AddressSanitizer + UBSan so the
+      # exercised paths double as a memory/UB check. Leak detection is off (the
+      # engine intentionally leaves allocations for the OS to reclaim at exit).
+      - name: Headless smoke under ASan/UBSan
+        env:
+          ASAN_OPTIONS: detect_leaks=0
+          UBSAN_OPTIONS: halt_on_error=1
+        run: |
+          make smoke CC="ccache gcc" \
+            EXTRA_CFLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" \
+            EXTRA_LDFLAGS="-fsanitize=address,undefined"
+
   fuzz-smoke:
     name: fuzz smoke (libFuzzer)
     runs-on: ubuntu-24.04

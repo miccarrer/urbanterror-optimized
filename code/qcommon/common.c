@@ -501,6 +501,97 @@ static void Com_AssertCvar_f( void ) {
 
 /*
 =============
+Com_AssertFile_f
+
+assert_file <path> — a mismatch (file not found by the filesystem) raises the exit code.
+=============
+*/
+static void Com_AssertFile_f( void ) {
+	if ( Cmd_Argc() != 2 ) {
+		Com_Printf( "usage: assert_file <path>\n" );
+		return;
+	}
+	Com_AssertResult( FS_FileExists( Cmd_Argv( 1 ) ), Cmd_Argv( 1 ), "exists", "yes" );
+}
+
+/*
+=============
+Com_AssertCommand_f
+
+assert_command <name> — asserts a console command is registered.
+=============
+*/
+static void Com_AssertCommand_f( void ) {
+	if ( Cmd_Argc() != 2 ) {
+		Com_Printf( "usage: assert_command <name>\n" );
+		return;
+	}
+	Com_AssertResult( Cmd_Exists( Cmd_Argv( 1 ) ), Cmd_Argv( 1 ), "is", "command" );
+}
+
+// Names accepted by assert_cvar_flag, mapped to their CVAR_* bit.
+static const struct {
+	const char *name;
+	unsigned bit;
+} com_cvarFlagNames[] = {
+    { "ARCHIVE", CVAR_ARCHIVE },
+    { "USERINFO", CVAR_USERINFO },
+    { "SERVERINFO", CVAR_SERVERINFO },
+    { "SYSTEMINFO", CVAR_SYSTEMINFO },
+    { "INIT", CVAR_INIT },
+    { "LATCH", CVAR_LATCH },
+    { "ROM", CVAR_ROM },
+    { "USER_CREATED", CVAR_USER_CREATED },
+    { "TEMP", CVAR_TEMP },
+    { "CHEAT", CVAR_CHEAT },
+    { "NORESTART", CVAR_NORESTART },
+    { "NODEFAULT", CVAR_NODEFAULT },
+    { "NOTABCOMPLETE", CVAR_NOTABCOMPLETE },
+};
+
+/*
+=============
+Com_AssertCvarFlag_f
+
+assert_cvar_flag <name> <FLAG> — asserts a cvar exists and carries the given CVAR_* flag.
+=============
+*/
+static void Com_AssertCvarFlag_f( void ) {
+	const char *name, *flagName;
+	unsigned flags, bit;
+	int i;
+
+	if ( Cmd_Argc() != 3 ) {
+		Com_Printf( "usage: assert_cvar_flag <name> <FLAG>   (ARCHIVE USERINFO SERVERINFO SYSTEMINFO INIT LATCH ROM CHEAT TEMP USER_CREATED NORESTART NODEFAULT NOTABCOMPLETE)\n" );
+		return;
+	}
+	name = Cmd_Argv( 1 );
+	flagName = Cmd_Argv( 2 );
+
+	bit = 0;
+	for ( i = 0; i < ARRAY_LEN( com_cvarFlagNames ); i++ ) {
+		if ( !Q_stricmp( flagName, com_cvarFlagNames[i].name ) ) {
+			bit = com_cvarFlagNames[i].bit;
+			break;
+		}
+	}
+	if ( bit == 0 ) {
+		Com_Printf( S_COLOR_YELLOW "assert_cvar_flag: unknown flag '%s'\n", flagName );
+		Com_AssertResult( qfalse, name, "flag?", flagName );
+		return;
+	}
+
+	flags = Cvar_Flags( name );
+	if ( flags == CVAR_NONEXISTENT ) {
+		Com_Printf( S_COLOR_YELLOW "assert_cvar_flag: cvar '%s' does not exist\n", name );
+		Com_AssertResult( qfalse, name, "has", flagName );
+		return;
+	}
+	Com_AssertResult( (qboolean)( ( flags & bit ) != 0 ), name, "has", flagName );
+}
+
+/*
+=============
 Com_Quit_f
 
 Both client and server can use this, and it will
@@ -4050,6 +4141,9 @@ void Com_Init( char *commandLine ) {
 	Cmd_AddCommand( "quit", Com_Quit_f );
 	Cmd_AddCommand( "assert", Com_Assert_f );
 	Cmd_AddCommand( "assert_cvar", Com_AssertCvar_f );
+	Cmd_AddCommand( "assert_cvar_flag", Com_AssertCvarFlag_f );
+	Cmd_AddCommand( "assert_command", Com_AssertCommand_f );
+	Cmd_AddCommand( "assert_file", Com_AssertFile_f );
 	Cmd_AddCommand( "changeVectors", MSG_ReportChangeVectors_f );
 	Cmd_AddCommand( "writeconfig", Com_WriteConfig_f );
 	Cmd_SetCommandCompletionFunc( "writeconfig", Cmd_CompleteWriteCfgName );
