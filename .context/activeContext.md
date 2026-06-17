@@ -1,7 +1,56 @@
 # Active Context — Urban Terror Optimized
 
 ## Dernière mise à jour
-2026-06-17 — Session 11 : **taille de police des onglets de console** (`con_tabScale`, PR #27 mergée). La feature **console à onglets était déjà mergée** (PR #19) — seule la taille des titres restait à régler. Ajout cvar `con_tabScale` (défaut **1.25**, range 1.0–3.0) + helper `Con_DrawScaledChar`. **Saga CodeQL** : 4 itérations de clamps n'ont pas satisfait `cpp/uncontrolled-arithmetic` (query bruyante, valeurs pourtant bornées) → **3 alertes dismissées en FP** (politique `docs/security-triage.md`, consignées). Clamps défensifs gardés. Ménage : branches locales mergées supprimées.
+2026-06-17 — Session 12 : **scripting cfg — Lot 1** (branche `feature/cfg-scripting`, en cours). Premier lot d'une série de 3 visant à améliorer console + scripting `.cfg` (idées de `docs/FEATURE_IDEAS.md`). Livré : `alias`/`unalias`/`unaliasall` (séquences nommées, persistées dans `q3config.cfg`, garde anti-récursion), `if <cvar> <op> <value> <cmd>` (exec conditionnel), `cvarlock`/`cvarunlock` (verrou local runtime), `time <cmd>` (profiling µs). `make smoke` vert (nouveau cas `tests/integration/cases/scripting.cfg`). Build client+serveur OK. Lots 2–3 (console UX render-side) à venir.
+
+## Session 12 : scripting cfg — Lot 1 (`alias`, `if`, `cvarlock`, `time`)
+
+**Branche** : `feature/cfg-scripting` (depuis `main`). **Non poussée**, working tree à committer.
+
+**Contexte** : l'utilisateur veut améliorer l'usage de la console et le scripting `.cfg`. Plan
+établi (3 lots séquencés, découpés par **testabilité** : Lot 1 = scripting 100 % assertable
+headless ; Lots 2–3 = console UX render-side, vérif visuelle). L'utilisateur a choisi un **lot
+ciblé** pour démarrer → Lot 1 livré cette session, Lots 2–3 planifiés.
+
+**État du code vérifié avant impl** : `vstr` (`cmd.c:428`) et `wait <N>` (`cmd.c:51`) existaient
+déjà ; `alias`, `if`, cvar-lock, `time` absents. Historique console déjà persistant (`history.c`).
+
+**Livré (Lot 1)** :
+- **`alias`/`unalias`/`unaliasall`** (`cmd.c`) — liste chaînée `cmd_alias_t`, dispatch dans
+  `Cmd_ExecuteString` **après** le match commande (pas de shadow d'un builtin) et **avant**
+  `Cvar_Command`. Expansion via `Cbuf_InsertText` (le corps tourne avant la suite du buffer).
+  **Garde anti-récursion** : `cmd_aliasRunaway` (budget 1024/passe, reset en tête de
+  `Cbuf_Execute`) → `alias a "a"` n'gèle plus (testé). **Persistance** : `Cmd_WriteAliases`
+  appelé dans `Com_WriteConfigToFile` (`common.c`) ; un changement d'alias arme
+  `cvar_modifiedFlags |= CVAR_ARCHIVE` pour forcer la réécriture de `q3config.cfg`.
+- **`if <cvar> <op> <value> <cmd>`** (`cmd.c`) — le 1er opérande est un **nom de cvar** (sa
+  valeur est comparée ; choix délibéré vs littéraux, c'est ce dont les configs ont besoin).
+  Réutilise le comparateur des asserts : `Com_AssertCompare` renommé **`Com_Compare`** (rendu
+  **public**, message d'erreur neutralisé, proto dans `qcommon.h`). Limité aux conditions.
+- **`cvarlock`/`cvarunlock`** (`cvar.c`) — nouveau flag **`CVAR_USER_LOCKED` = 0x40000**
+  (`q_shared.h`, bit libre). Check ajouté en tête du gate de flags de `Cvar_Set2` (avant
+  ROM/INIT/…) : si verrouillé et `!force`, refuse. Runtime-only (jamais archivé/réseau ; les
+  writes moteur `force=qtrue` passent). `Cvar_Get` fait `flags |= ` → le bit survit.
+- **`time <cmd>`** (`cmd.c`) — `Sys_Microseconds()` autour de `Cmd_ExecuteString`, affiche ms.μs.
+
+**Tests** : `tests/integration/cases/scripting.cfg` (ramassé auto par le runner) — couvre
+enregistrement des 7 commandes, alias define/expand/redéfinition/multi-statement/shadow-refus/
+unalias, if vrai/faux/string, cvarlock blocage→unlock, time smoke. **`make smoke` : 2/2 PASS**.
+
+**Pièges rencontrés** :
+- `if` v1 comparait des **littéraux** (comme `assert`) → `if cond == 5` comparait la chaîne
+  « cond ». Corrigé : 1er opérande = nom de cvar (`Cvar_VariableString`).
+- Test manuel d'alias multi-statement via `+alias x "a; b"` en ligne de commande : le `;` était
+  tronqué — **artefact de quoting shell**, pas un bug (dans un vrai `.cfg` les guillemets tiennent ;
+  prouvé par le cas `multi` du test d'intégration et la persistance `alias greet "echo hello world"`).
+
+**Docs mises à jour** : `docs/CVARS.md` (§ « Cfg scripting »), `ROADMAP.md` (M8 Feature #6 +
+rattrapage #3–#5 + table d'ordre corrigée v0.2.0/M7/M8).
+
+**Reste à faire** : commit + push + PR. Puis Lot 2 (console UX : `con_height`/opacité, notify
+paramétrable) et Lot 3 (recherche scrollback, smart condump).
+
+---
 
 ## Session 11 : police des onglets de console (`con_tabScale`)
 

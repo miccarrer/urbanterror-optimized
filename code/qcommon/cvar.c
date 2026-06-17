@@ -654,6 +654,11 @@ cvar_t *Cvar_Set2( const char *var_name, const char *value, qboolean force ) {
 			return Cvar_Get( var_name, value, 0 );
 	}
 
+	if ( ( var->flags & CVAR_USER_LOCKED ) && !force ) {
+		Com_Printf( "%s is locked (use \"cvarunlock %s\" to change it).\n", var_name, var_name );
+		return var;
+	}
+
 	if ( var->flags & (CVAR_ROM | CVAR_INIT | CVAR_CHEAT | CVAR_DEVELOPER) && !force )
 	{
 		if ( var->flags & CVAR_ROM )
@@ -2096,6 +2101,57 @@ void Cvar_CompleteCvarName( const char *args, int argNum )
 	}
 }
 
+/*
+============
+Cvar_Lock_f
+
+cvarlock <name> — flag a cvar read-only against accidental console changes
+(competitive configs). Runtime-only: the lock is not archived nor networked,
+and engine-internal (forced) writes still go through.
+============
+*/
+static void Cvar_Lock_f( void ) {
+	cvar_t *var;
+
+	if ( Cmd_Argc() != 2 ) {
+		Com_Printf( "usage: cvarlock <name>\n" );
+		return;
+	}
+
+	var = Cvar_FindVar( Cmd_Argv( 1 ) );
+	if ( !var ) {
+		Com_Printf( "cvarlock: cvar \"%s\" does not exist.\n", Cmd_Argv( 1 ) );
+		return;
+	}
+
+	var->flags |= CVAR_USER_LOCKED;
+	Com_Printf( "%s is now locked.\n", var->name );
+}
+
+/*
+============
+Cvar_Unlock_f
+
+cvarunlock <name> — clear a lock set by cvarlock.
+============
+*/
+static void Cvar_Unlock_f( void ) {
+	cvar_t *var;
+
+	if ( Cmd_Argc() != 2 ) {
+		Com_Printf( "usage: cvarunlock <name>\n" );
+		return;
+	}
+
+	var = Cvar_FindVar( Cmd_Argv( 1 ) );
+	if ( !var ) {
+		Com_Printf( "cvarunlock: cvar \"%s\" does not exist.\n", Cmd_Argv( 1 ) );
+		return;
+	}
+
+	var->flags &= ~CVAR_USER_LOCKED;
+	Com_Printf( "%s is now unlocked.\n", var->name );
+}
 
 /*
 ============
@@ -2131,6 +2187,11 @@ void Cvar_Init (void)
 	Cmd_SetCommandCompletionFunc("unset", Cvar_CompleteCvarName);
 
 	Cmd_AddCommand( "varfunc", Cvar_Func_f );
+
+	Cmd_AddCommand( "cvarlock", Cvar_Lock_f );
+	Cmd_SetCommandCompletionFunc( "cvarlock", Cvar_CompleteCvarName );
+	Cmd_AddCommand( "cvarunlock", Cvar_Unlock_f );
+	Cmd_SetCommandCompletionFunc( "cvarunlock", Cvar_CompleteCvarName );
 
 	Cmd_AddCommand ("cvarlist", Cvar_List_f);
 	Cmd_AddCommand ("cvar_modified", Cvar_ListModified_f);

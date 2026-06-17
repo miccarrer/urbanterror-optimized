@@ -548,6 +548,8 @@ void	Cmd_ExecuteString( const char *text );
 // Parses a single line of text into arguments and tries to execute it
 // as if it was typed at the console
 
+void Cmd_WriteAliases( fileHandle_t f );
+// Writes the user-defined aliases ("alias name value") to a config file handle
 
 /*
 ==============================================================
@@ -1003,6 +1005,9 @@ qboolean	Com_HasPatterns( const char *str );
 int			Com_FilterPath( const char *filter, const char *name );
 int			Com_RealTime(qtime_t *qtime);
 qboolean	Com_SafeMode( void );
+qboolean Com_Compare( const char *a, const char *op, const char *b );
+// Evaluates "a <op> b"; numeric ops (== != < <= > >=) compare as floats,
+// string ops (eq ne) verbatim. Used by the assert harness and "if" command.
 void		Com_RunAndTimeServerPacket( const netadr_t *evFrom, msg_t *buf );
 
 void		Com_StartupVariable( const char *match );

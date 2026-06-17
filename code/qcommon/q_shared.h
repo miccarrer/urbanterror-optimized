@@ -954,6 +954,8 @@ default values.
 #define CVAR_DEVELOPER		0x10000 // can be set only in developer mode
 #define CVAR_NOTABCOMPLETE	0x20000 // no tab completion in console
 
+#define CVAR_USER_LOCKED 0x40000 // locked by the user via "cvarlock"; runtime only, never archived/networked
+
 #define CVAR_ARCHIVE_ND		(CVAR_ARCHIVE | CVAR_NODEFAULT)
 
 // These flags are only returned by the Cvar_Flags() function

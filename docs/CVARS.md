@@ -212,4 +212,79 @@ bind PGDN con_nexttab
 
 ---
 
+## Cfg scripting — aliases, conditionals, cvar locks
+
+Console-scripting commands for richer `.cfg` files. All are local (never sent to the
+server) and free on the compatibility side. These complement the engine's existing
+`vstr <cvar>` (run a cvar's value as a command) and `wait <frames>` (delay the rest of
+the command buffer).
+
+### `alias` — named command sequences
+
+Bind a console line to a name; running the name expands the stored line into the command
+buffer (Quake/Source style). Aliases are **saved to `q3config.cfg`** and reloaded at start.
+
+| Command | Effect |
+|---------|--------|
+| `alias` | List every defined alias. |
+| `alias <name>` | Show the body of one alias. |
+| `alias <name> <command…>` | Define (or redefine) an alias. Quote the body to keep `;`-separated steps in one alias. |
+| `unalias <name>` | Remove one alias. |
+| `unaliasall` | Remove every alias. |
+
+```
+alias nq "set cl_renderer opengl; vid_restart"   // quick renderer swap
+alias +zoom "cg_fov 40"
+alias -zoom "cg_fov 90"
+bind MOUSE2 "+zoom; -zoom"
+```
+
+Notes: an alias may not shadow an existing engine command (it would never run, so it is
+refused). A self-referential alias (`alias a "a"`) is caught by a recursion guard
+(1024 expansions per command-buffer pass) instead of hanging the engine.
+
+### `if` — conditional execution
+
+```
+if <cvar> <op> <value> <command…>
+```
+
+Runs `<command>` only when the **current value of `<cvar>`** satisfies the comparison.
+Operators: numeric `== != < <= > >=` (compared as floats) and string `eq ne` (verbatim) —
+the same set as the `assert` test command. Deliberately limited to a single condition (no
+loops/else) to keep the command buffer safe; quote a `;`-separated body for several steps.
+
+```
+if com_maxfps < 125 "set com_maxfps 125; echo raised fps cap"
+if arch eq x86_64 exec config_64.cfg
+```
+
+### `cvarlock` / `cvarunlock` — protect a cvar
+
+Flags a cvar read-only against accidental console changes (competitive configs). The lock
+is **runtime-only** — never archived nor networked, and engine-internal updates still go
+through. Use it after setting a value you want frozen.
+
+| Command | Effect |
+|---------|--------|
+| `cvarlock <name>` | Block console changes to the cvar until unlocked. |
+| `cvarunlock <name>` | Clear the lock. |
+
+```
+sensitivity 2.4
+cvarlock sensitivity     // a stray "sensitivity 5" in a server cfg can't change it now
+```
+
+### `time` — profile a command
+
+`time <command…>` runs the command immediately and prints how long it took, in
+milliseconds (microsecond resolution). For commands that queue more work (e.g. `exec`),
+this times only the queueing, not the deferred execution.
+
+```
+time exec myconfig.cfg
+```
+
+---
+
 *Remaining M5 features (UrT demo) are tracked in [ROADMAP.md](../ROADMAP.md).*

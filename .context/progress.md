@@ -2,10 +2,19 @@
 
 ## État global du projet
 
-**Milestone actuel** : **police des onglets de console** (`con_tabScale`, session 11, 2026-06-17,
-PR #27 mergée). La console à onglets elle-même était déjà livrée (PR #19). Précédemment : `cm360`
-(session 10, PR #25/#26) ; harnais de test headless (session 9, PR #24). Fondations M0–M4 terminées ;
-M5 partiel ; M6 (release v0.2.0) publiée ; M7 terminé ; Feature #1 (identity) mergée PR #20.
+**Milestone actuel** : **scripting cfg — Lot 1** (session 12, 2026-06-17, branche
+`feature/cfg-scripting`, en cours). `alias`/`if`/`cvarlock`/`time` ajoutés (`make smoke` vert).
+Précédemment : police des onglets `con_tabScale` (session 11, PR #27) ; `cm360` (session 10,
+PR #25/#26) ; harnais headless (session 9, PR #24). Fondations M0–M4 terminées ; M5 partiel ;
+M6 (release v0.2.0) publiée ; M7 terminé ; Feature #1 (identity) mergée PR #20.
+
+**Session 12 (2026-06-17) — scripting cfg (Lot 1)** : 1er des 3 lots « console + scripting `.cfg` »
+(idées `docs/FEATURE_IDEAS.md`). Ajout `alias`/`unalias`/`unaliasall` (persistés, garde
+anti-récursion), `if <cvar> <op> <value> <cmd>` (réutilise `Com_Compare`, ex-`Com_AssertCompare`
+rendu public), `cvarlock`/`cvarunlock` (flag runtime `CVAR_USER_LOCKED`), `time` (µs). Fichiers :
+`cmd.c`/`cvar.c`/`common.c`/`qcommon.h`/`q_shared.h`. Test `tests/integration/cases/scripting.cfg`
+(2/2 PASS). Build client+serveur OK. Lots 2–3 (console UX render-side) à venir. Détails §
+`activeContext.md` Session 12.
 
 **Session 11 (2026-06-17) — police des onglets** : la tabbed-console était déjà mergée (PR #19) ;
 seule la taille des titres restait. Ajout cvar `con_tabScale` (défaut 1.25, range 1.0–3.0) + helper
@@ -37,6 +46,19 @@ preview `listidentities` sans `model`, doc « sauver connecté en jeu » + note 
 ---
 
 ## ✅ Terminé
+
+### Session 12 — Scripting cfg, Lot 1 (2026-06-17) ← branche `feature/cfg-scripting`
+- [x] **`alias`/`unalias`/`unaliasall`** (`cmd.c`) : séquences nommées, dispatch dans
+      `Cmd_ExecuteString` (après commandes, avant cvars), persistance `q3config.cfg`
+      (`Cmd_WriteAliases`), garde anti-récursion 1024/passe, refus de masquer un builtin
+- [x] **`if <cvar> <op> <value> <cmd>`** : exec conditionnel ; `Com_AssertCompare`→`Com_Compare`
+      rendu public (`qcommon.h`) ; limité aux conditions
+- [x] **`cvarlock`/`cvarunlock`** (`cvar.c`) : flag `CVAR_USER_LOCKED` (0x40000), check dans
+      `Cvar_Set2`, runtime-only (ni archivé ni réseau)
+- [x] **`time <cmd>`** : profiling µs (`Sys_Microseconds`)
+- [x] **Test** `tests/integration/cases/scripting.cfg` — `make smoke` 2/2 PASS ; build client+serveur OK
+- [x] **Docs** : `docs/CVARS.md` § Cfg scripting ; `ROADMAP.md` M8 #6 + rattrapage
+- [ ] **Restant** : commit + push + PR ; Lot 2 (console UX `con_height`/notify), Lot 3 (recherche/condump)
 
 ### Session 11 — Police des onglets de console (2026-06-17) ← PR #27 (mergée)
 - [x] **`con_tabScale`** : cvar taille des titres d'onglets (défaut 1.25, range 1.0–3.0,

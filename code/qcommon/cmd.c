@@ -33,6 +33,7 @@ typedef struct {
 } cmd_t;
 
 static int   cmd_wait;
+static int cmd_aliasRunaway; // alias-recursion budget, reset each Cbuf_Execute pass
 static cmd_t cmd_text;
 static byte  cmd_text_buf[MAX_CMD_BUFFER];
 
@@ -263,6 +264,8 @@ void Cbuf_Execute( void )
 		return;
 	}
 
+	cmd_aliasRunaway = 0; // fresh budget for alias expansion this pass
+
 	// This will keep // style comments all on one line by not breaking on
 	// a semicolon.  It will keep /* ... */ style comments all on one line by not
 	// breaking it for semicolon or newline.
@@ -450,6 +453,242 @@ static void Cmd_Echo_f( void )
 	Com_Printf( "%s\n", Cmd_ArgsFrom( 1 ) );
 }
 
+/*
+=============================================================================
+
+                        COMMAND ALIASES
+
+"alias name value" binds a console line to a name, expanded into the command
+buffer whenever that name is executed (Source/Quake style). Aliases are local
+(never sent to the server) and persisted to the config so they survive restarts.
+=============================================================================
+*/
+
+#define MAX_ALIAS_NAME 32
+#define MAX_ALIAS_EXPANSION 1024 // runaway-recursion guard per Cbuf_Execute pass
+
+typedef struct cmd_alias_s {
+	struct cmd_alias_s *next;
+	char *name;
+	char *value;
+} cmd_alias_t;
+
+static cmd_alias_t *cmd_aliases;
+
+static cmd_alias_t *Cmd_FindAlias( const char *name ) {
+	cmd_alias_t *a;
+
+	for ( a = cmd_aliases; a; a = a->next ) {
+		if ( !Q_stricmp( name, a->name ) ) {
+			return a;
+		}
+	}
+	return NULL;
+}
+
+/*
+============
+Cmd_ExpandAlias
+
+If name matches an alias, queue its value at the front of the command buffer
+and return qtrue. Guards against self-referential aliases (e.g. alias a "a").
+============
+*/
+static qboolean Cmd_ExpandAlias( const char *name ) {
+	cmd_alias_t *a;
+
+	a = Cmd_FindAlias( name );
+	if ( !a ) {
+		return qfalse;
+	}
+
+	if ( ++cmd_aliasRunaway > MAX_ALIAS_EXPANSION ) {
+		Com_Printf( S_COLOR_YELLOW "alias: runaway recursion limit (%i) hit, aborting \"%s\"\n",
+		            MAX_ALIAS_EXPANSION, a->name );
+		return qtrue; // swallow it so the buffer can drain
+	}
+
+	Cbuf_InsertText( a->value );
+	return qtrue;
+}
+
+/*
+============
+Cmd_Alias_f
+
+alias                       — list every alias
+alias <name>                — show one alias
+alias <name> <command...>   — (re)define an alias
+============
+*/
+static void Cmd_Alias_f( void ) {
+	cmd_alias_t *a;
+	const char *name;
+
+	if ( Cmd_Argc() == 1 ) {
+		int n = 0;
+		for ( a = cmd_aliases; a; a = a->next ) {
+			Com_Printf( "%s : %s\n", a->name, a->value );
+			n++;
+		}
+		Com_Printf( "%i alias%s\n", n, n == 1 ? "" : "es" );
+		return;
+	}
+
+	name = Cmd_Argv( 1 );
+
+	if ( Cmd_Argc() == 2 ) {
+		a = Cmd_FindAlias( name );
+		if ( a ) {
+			Com_Printf( "\"%s\" = \"%s\"\n", a->name, a->value );
+		} else {
+			Com_Printf( "alias \"%s\" is not defined\n", name );
+		}
+		return;
+	}
+
+	if ( strlen( name ) >= MAX_ALIAS_NAME ) {
+		Com_Printf( "alias name \"%s\" is too long (max %i)\n", name, MAX_ALIAS_NAME - 1 );
+		return;
+	}
+
+	// don't let an alias shadow a real command: it would never run
+	if ( Cmd_Exists( name ) ) {
+		Com_Printf( "alias \"%s\" would shadow an existing command, ignored\n", name );
+		return;
+	}
+
+	a = Cmd_FindAlias( name );
+	if ( a ) {
+		Z_Free( a->value );
+		a->value = CopyString( Cmd_ArgsFrom( 2 ) );
+	} else {
+		a = S_Malloc( sizeof( *a ) );
+		a->name = CopyString( name );
+		a->value = CopyString( Cmd_ArgsFrom( 2 ) );
+		a->next = cmd_aliases;
+		cmd_aliases = a;
+	}
+
+	// mark the config dirty so the alias is persisted on the next write
+	cvar_modifiedFlags |= CVAR_ARCHIVE;
+}
+
+/*
+============
+Cmd_Unalias_f
+
+unalias <name> — remove a single alias
+============
+*/
+static void Cmd_Unalias_f( void ) {
+	cmd_alias_t *a, **back;
+	const char *name;
+
+	if ( Cmd_Argc() != 2 ) {
+		Com_Printf( "usage: unalias <name>\n" );
+		return;
+	}
+
+	name = Cmd_Argv( 1 );
+	back = &cmd_aliases;
+	for ( ;; ) {
+		a = *back;
+		if ( !a ) {
+			Com_Printf( "alias \"%s\" is not defined\n", name );
+			return;
+		}
+		if ( !Q_stricmp( name, a->name ) ) {
+			*back = a->next;
+			Z_Free( a->name );
+			Z_Free( a->value );
+			Z_Free( a );
+			cvar_modifiedFlags |= CVAR_ARCHIVE;
+			return;
+		}
+		back = &a->next;
+	}
+}
+
+/*
+============
+Cmd_UnaliasAll_f
+
+unaliasall — remove every alias
+============
+*/
+static void Cmd_UnaliasAll_f( void ) {
+	cmd_alias_t *a, *next;
+
+	for ( a = cmd_aliases; a; a = next ) {
+		next = a->next;
+		Z_Free( a->name );
+		Z_Free( a->value );
+		Z_Free( a );
+	}
+	cmd_aliases = NULL;
+	cvar_modifiedFlags |= CVAR_ARCHIVE;
+}
+
+/*
+============
+Cmd_WriteAliases
+
+Writes the user-defined aliases to a config file handle so they persist.
+============
+*/
+void Cmd_WriteAliases( fileHandle_t f ) {
+	cmd_alias_t *a;
+
+	for ( a = cmd_aliases; a; a = a->next ) {
+		FS_Printf( f, "alias %s \"%s\"" Q_NEWLINE, a->name, a->value );
+	}
+}
+
+/*
+============
+Cmd_If_f
+
+if <cvar> <op> <value> <command...> — run <command> only when the cvar's current
+value satisfies "value op value". Numeric ops (== != < <= > >=) compare as
+floats, string ops (eq ne) verbatim. Deliberately limited to a single condition
+(no loops/else) to keep the command buffer safe; chain with ';' inside a quoted
+command for multiple statements.
+============
+*/
+static void Cmd_If_f( void ) {
+	if ( Cmd_Argc() < 5 ) {
+		Com_Printf( "usage: if <cvar> <op> <value> <command...>   (op: == != < <= > >= eq ne)\n" );
+		return;
+	}
+
+	if ( Com_Compare( Cvar_VariableString( Cmd_Argv( 1 ) ), Cmd_Argv( 2 ), Cmd_Argv( 3 ) ) ) {
+		Cbuf_InsertText( Cmd_ArgsFrom( 4 ) );
+	}
+}
+
+/*
+============
+Cmd_Time_f
+
+time <command...> — run <command> now and print how long it took. Note: for
+commands that queue more work (e.g. "exec"), this times only the queueing.
+============
+*/
+static void Cmd_Time_f( void ) {
+	int64_t start, elapsed;
+
+	if ( Cmd_Argc() < 2 ) {
+		Com_Printf( "usage: time <command...>\n" );
+		return;
+	}
+
+	start = Sys_Microseconds();
+	Cmd_ExecuteString( Cmd_ArgsFrom( 1 ) );
+	elapsed = Sys_Microseconds() - start;
+
+	Com_Printf( "time: %i.%03i ms\n", (int)( elapsed / 1000 ), (int)( elapsed % 1000 ) );
+}
 
 /*
 =============================================================================
@@ -957,6 +1196,12 @@ void Cmd_ExecuteString( const char *text ) {
 		}
 	}
 
+	// check aliases (after commands so a builtin can't be shadowed,
+	// before cvars so an alias can override a bare cvar name)
+	if ( Cmd_ExpandAlias( cmd_argv[0] ) ) {
+		return;
+	}
+
 	// check cvars
 	if ( Cvar_Command() ) {
 		return;
@@ -1054,4 +1299,9 @@ void Cmd_Init( void ) {
 	Cmd_SetCommandCompletionFunc( "vstr", Cvar_CompleteCvarName );
 	Cmd_AddCommand ("echo",Cmd_Echo_f);
 	Cmd_AddCommand ("wait", Cmd_Wait_f);
+	Cmd_AddCommand( "alias", Cmd_Alias_f );
+	Cmd_AddCommand( "unalias", Cmd_Unalias_f );
+	Cmd_AddCommand( "unaliasall", Cmd_UnaliasAll_f );
+	Cmd_AddCommand( "if", Cmd_If_f );
+	Cmd_AddCommand( "time", Cmd_Time_f );
 }

@@ -419,13 +419,14 @@ static int com_exitCode = 0;
 
 /*
 =============
-Com_AssertCompare
+Com_Compare
 
 Evaluates "a <op> b". Numeric operators (== != < <= > >=) compare as floats;
-string operators (eq ne) compare verbatim.
+string operators (eq ne) compare verbatim. Shared by the assert harness and the
+"if" scripting command.
 =============
 */
-static qboolean Com_AssertCompare( const char *a, const char *op, const char *b ) {
+qboolean Com_Compare( const char *a, const char *op, const char *b ) {
 	if ( !strcmp( op, "eq" ) )
 		return (qboolean)( strcmp( a, b ) == 0 );
 	if ( !strcmp( op, "ne" ) )
@@ -474,7 +475,7 @@ static void Com_Assert_f( void ) {
 		Com_Printf( "usage: assert <a> <op> <b>   (op: == != < <= > >= eq ne)\n" );
 		return;
 	}
-	Com_AssertResult( Com_AssertCompare( Cmd_Argv( 1 ), Cmd_Argv( 2 ), Cmd_Argv( 3 ) ),
+	Com_AssertResult( Com_Compare( Cmd_Argv( 1 ), Cmd_Argv( 2 ), Cmd_Argv( 3 ) ),
 	                  Cmd_Argv( 1 ), Cmd_Argv( 2 ), Cmd_Argv( 3 ) );
 }
 
@@ -495,7 +496,7 @@ static void Com_AssertCvar_f( void ) {
 	}
 	val = Cvar_VariableString( Cmd_Argv( 1 ) );
 	Com_sprintf( label, sizeof( label ), "%s(=%s)", Cmd_Argv( 1 ), val );
-	Com_AssertResult( Com_AssertCompare( val, Cmd_Argv( 2 ), Cmd_Argv( 3 ) ),
+	Com_AssertResult( Com_Compare( val, Cmd_Argv( 2 ), Cmd_Argv( 3 ) ),
 	                  label, Cmd_Argv( 2 ), Cmd_Argv( 3 ) );
 }
 
@@ -4257,6 +4258,7 @@ static void Com_WriteConfigToFile( const char *filename ) {
 	Key_WriteBindings( f );
 #endif
 	Cvar_WriteVariables( f );
+	Cmd_WriteAliases( f );
 	FS_FCloseFile( f );
 }
 

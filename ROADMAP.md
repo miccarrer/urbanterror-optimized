@@ -236,6 +236,30 @@ projet « le plus moderne possible » : tests, sécurité CI, build, env reprodu
 - **Pure** : validation par checksum → insensible au sous-dossier (à confirmer en jeu).
 - **Statut** : ✅ Implémenté, build OK (client+serveur). Voir [CVARS.md](docs/CVARS.md)
 
+### Features #3–#5 — livrées depuis v0.2.0 (rattrapage)
+Détails complets dans `.context/activeContext.md` (sessions 9–11).
+- **#3 Harnais de test headless** (session 9, PR #24) — `assert`/`assert_cvar`, `quit <code>`,
+  `scripts/headless`, `tests/integration/`, null renderer, `make smoke`/`smoke-client`.
+- **#4 `cm360`** (session 10, PR #25/#26) — convertisseur `sensitivity` ↔ cm/360, cvar `m_dpi`.
+- **#5 Console à onglets + `con_tabScale`** (PR #19 / #27) — onglets All/General/Frag/Chat,
+  taille des titres réglable.
+
+### Feature #6 — Scripting cfg & console (en cours, branche `feature/cfg-scripting`)
+*Issu de [`docs/FEATURE_IDEAS.md`](docs/FEATURE_IDEAS.md) §« Console, configs & commandes ».
+Lot 1 d'une série de 3 (Lot 2 : console UX légère `con_height`/notify ; Lot 3 : recherche
+scrollback + smart condump). Voir le plan de session.*
+- **Lot 1 — cœur scripting cfg** ✅ implémenté, `make smoke` vert :
+  - `alias` / `unalias` / `unaliasall` — séquences de commandes nommées, persistées dans
+    `q3config.cfg`, garde anti-récursion (1024 expansions/passe), refus de masquer une commande.
+  - `if <cvar> <op> <value> <cmd>` — exec conditionnel ; réutilise le comparateur des asserts
+    (`Com_Compare`, désormais public). Limité aux conditions (pas de boucles) → cbuf sûr.
+  - `cvarlock` / `cvarunlock` — verrou local (flag runtime `CVAR_USER_LOCKED`, ni archivé ni réseau).
+  - `time <cmd>` — profiling d'une commande (µs).
+  - **Fichiers** : `cmd.c` (alias/if/time + dispatch), `cvar.c` (lock), `common.c`/`qcommon.h`
+    (`Com_Compare` public + `Cmd_WriteAliases`), `q_shared.h` (flag). Test :
+    `tests/integration/cases/scripting.cfg`. Doc : [CVARS.md](docs/CVARS.md).
+- **Lot 2 / Lot 3** : à venir (console UX render-side).
+
 ---
 
 ## 📋 Ordre d'exécution
@@ -248,8 +272,9 @@ projet « le plus moderne possible » : tests, sécurité CI, build, env reprodu
 | 3 | M3 — CI/CD | Moyen | Moyen |
 | 4 | M4 — Docs de référence | Court | Faible |
 | 5 | M5 — Features UrT | Long | Moyen |
-| 6 | M6 — Release v1.0.0 | Court | Faible |
-| 7 | M7 — Qualité & durcissement | Long | Moyen |
+| ✅ | M6 — Release **v0.2.0** (publiée 2026-06-15 ; v1.0.0 = jalon futur) | Court | Faible |
+| ✅ | M7 — Qualité & durcissement | Long | Moyen |
+| → | M8 — Features post-v0.2.0 (joueur/dev) | Continu | Faible |
 
 ---
 
