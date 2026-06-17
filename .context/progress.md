@@ -2,10 +2,18 @@
 
 ## État global du projet
 
-**Milestone actuel** : **Harnais de test runtime headless** (session 9, 2026-06-17), branche
-`feature/agent-test-harness` (non poussée). Précédemment : Feature #2 download dir (session 8,
-branche `feature/fs-downloadpath`). Fondations M0–M4 terminées ; M5 partiel ; M6 (release v0.2.0)
-publiée ; M7 terminé ; Feature #1 (identity) mergée PR #20.
+**Milestone actuel** : **`cm360` livré + diagnostic DPND** (session 10, 2026-06-17). Convertisseur
+`cm360` mergé (PR #25) ; écart 2× ressenti → **aucun bug moteur** (souris G305 réellement à 1600 DPI,
+Piper affichait 800 / profil non appliqué). Note troubleshooting docs (PR #26, ouverte). Précédemment :
+harnais de test headless (session 9, mergé via PR #24). Fondations M0–M4 terminées ; M5 partiel ;
+M6 (release v0.2.0) publiée ; M7 terminé ; Feature #1 (identity) mergée PR #20.
+
+**Session 10 (2026-06-17) — `cm360` + diagnostic DPI** : commande `cm360` (sensitivity ↔ cm/360) +
+cvar `m_dpi` livrés (PR #25 mergée). Écart 2× signalé (cm360 51.95 cm vs ~26 cm ressenti) → diagnostic
+complet : mod, accel KDE, XWayland, display scale tous réfutés ; lecture **evdev brute** → souris
+**physiquement à ~1600 DPI** (preset onboard G305 via bouton DPI-shift), Piper/libratbag affichant un
+800 non appliqué (profil `(disabled)`). Verdict : math/SDL/cm360 corrects, `m_dpi` mentait. Résolu côté
+utilisateur (`m_dpi 1600`). Leçon documentée (`docs/CVARS.md`, PR #26). Détails § `activeContext.md` Session 10.
 
 **Session 9 (2026-06-17) — autonomie agent / CI** : harnais de test runtime headless. Tier 0
 (`assert`/`assert_cvar`, `quit <code>`, `com_logTimestamps`) + Tier 1 (`scripts/headless`, runner
@@ -25,6 +33,17 @@ preview `listidentities` sans `model`, doc « sauver connecté en jeu » + note 
 
 ## ✅ Terminé
 
+### Session 10 — `cm360` + diagnostic écart DPI (2026-06-17) ← PR #25 (mergée), PR #26 (docs)
+- [x] **Feature `cm360`** : commande convertisseur `sensitivity` ↔ cm/360 + cvar `m_dpi` (`cl_input.c`),
+      doc `docs/CVARS.md` — **mergée (PR #25)**
+- [x] **Diagnostic écart 2×** : réfutation systématique (mod / accel KDE / XWayland / display scale),
+      instrumentation `mousecount` temporaire (retirée), sonde **evdev brute** → souris G305 réellement
+      à ~1600 DPI (preset onboard, pas 800) → **aucun bug moteur**
+- [x] **Note troubleshooting** (`docs/CVARS.md`) : `m_dpi` doit refléter le DPI matériel réel ; vérifier
+      via comptes kernel — branche `docs/cm360-dpi-tip`, **PR #26 ouverte**
+- [x] **Ménage** : 3 branches locales mergées supprimées ; 16 remotes mergées identifiées (suppression utilisateur)
+- [ ] **Restant utilisateur** : merge PR #26 ; `git push origin --delete` des 16 branches mergées
+
 ### Session 9 — Harnais de test runtime headless (2026-06-17) ← branche `feature/agent-test-harness`
 - [x] **Tier 0** : `assert`/`assert_cvar`, `quit <code>` (`Sys_Quit(int)`), `com_logTimestamps`
       (`common.c`, `unix_main.c`, `win_main.c`, `qcommon.h`)
@@ -33,7 +52,8 @@ preview `listidentities` sans `model`, doc « sauver connecté en jeu » + note 
       `cl_renderer null`, `USE_RENDERER_NULL`), **`cl_noUI`** (client headless **sans asset**)
 - [x] **Cibles + CI** : `make smoke` (serveur) + `make smoke-client` (client), tous deux install-free ;
       job CI `integration` lance les deux suites + détecte les FAIL (testé négatif)
-- [ ] **Restant** : push/PR ; étoffer `cases/` ; Tier 2/3 (introspection JSON, déterminisme) non commencés
+- [x] **Mergé via PR #24**
+- [ ] **Restant** : étoffer `cases/` au fil des features ; Tier 2/3 (introspection JSON, déterminisme) non commencés
 
 ### Analyse & Planification (2026-06-14)
 - [x] Analyse des 66 commits de `omg-urt/urbanterror-slim` vs notre projet

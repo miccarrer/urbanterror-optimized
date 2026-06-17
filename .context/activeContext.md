@@ -1,7 +1,31 @@
 # Active Context — Urban Terror Optimized
 
 ## Dernière mise à jour
-2026-06-17 — Session 9 : **harnais de test runtime headless** (autonomie agent/CI). Tier 0 (assert/quit code/log déterministe) + Tier 1 (wrapper headless, runner d'intégration, null renderer, client install-free via `cl_noUI`). 8 commits sur `feature/agent-test-harness`. Build OK, suites vertes.
+2026-06-17 — Session 10 : **convertisseur `cm360`** (PR #25 mergée) + **diagnostic d'un écart 2× ressenti in-game**. Verdict : **aucun bug moteur** — la souris (Logitech G305) tournait physiquement à **1600 DPI** (preset onboard via bouton DPI-shift), alors que Piper/libratbag affichaient 800 (profil `(disabled)`, non appliqué). Math `cm360`, chemin SDL et evdev tous corrects. Note de troubleshooting ajoutée (`docs/CVARS.md`, PR #26). Ménage branches : 3 locales mergées supprimées ; 16 remotes mergées à supprimer (commande fournie à l'utilisateur).
+
+## Session 10 : `cm360` + diagnostic écart DPI
+
+**Branche** : `docs/cm360-dpi-tip` (PR #26, docs-only). Feature `cm360` déjà sur `main` (PR #25 mergée).
+
+**Feature livrée** : commande `cm360` (`cl_input.c`) — convertit `sensitivity` ↔ **cm/360** (distance physique pour un tour complet). `cm360` affiche, `cm360 <valeur>` règle `sensitivity`. Nouveau cvar `m_dpi` (défaut 800, `CVAR_ARCHIVE_ND`). Formule : `cm/360 = 360 × 2.54 / (m_dpi × sensitivity × m_yaw)`. Doc `docs/CVARS.md`.
+
+**Le bug signalé** : `cm360` indiquait 51.95 cm/360 (sens 1, dpi 800, m_yaw 0.022) mais le ressenti in-game était ~26 cm — un facteur **2×** propre.
+
+**Diagnostic (méthode → conclusion)** :
+- Hypothèses **réfutées** une à une : mod (`cgameSensitivity=1` confirmé en jeu actif), accel KDE (Flat/neutre, off → pas d'effet), XWayland (idem en Wayland natif), **display scale** (`kscreen-doctor` : `Scale: 1` sur les 2 écrans, natif 2560×1440 → pas de HiDPI).
+- Instrumentation temporaire (commande `mousecount` dans `cl_input.c`, **retirée depuis**) : un trait de 25.7 cm (3 cartes bancaires) → **16528 comptes** côté moteur = 643 comptes/cm ≈ **1620 DPI**.
+- **Lecture brute evdev** (`/dev/input/event18`, sonde Python, avant libinput/SDL) : ~15700–16900 comptes pour 25.7 cm → **~1600 DPI matériel réel**. SDL transmet fidèlement (pas de doublement).
+- `ratbagctl` : presets G305 = 400/800/**1600**/3200/200 ; `res 1: 800 (active)` selon ratbagd **mais** profil `Profile 0: (disabled)` → ratbagd ne pilote pas réellement la souris. Le bouton DPI-shift avait basculé le preset onboard sur 1600.
+
+**Verdict** : aucun bug moteur/SDL/cm360. `m_dpi 800` mentait sur le vrai DPI (1600). L'utilisateur joue en réalité à 1600 DPI / ~26 cm/360 depuis des années (mémoire musculaire calibrée dessus).
+
+**Résolution utilisateur** : a mis **`m_dpi 1600`** (cm360 lit juste désormais) + `ratbagctl … profile 0 enable`. Recommandation donnée : garder 1600 partout (y compris CS2 — pas de souci, raw input), ne pas « corriger » à 800 sauf à vouloir tout recalibrer.
+
+**Leçon documentée (PR #26)** : `cm360` n'est juste que si `m_dpi` reflète le **DPI matériel réel**. Les configurateurs (Piper/libratbag) peuvent afficher un preset non appliqué ; vérifier via comptes kernel bruts. → note troubleshooting dans `docs/CVARS.md`.
+
+**Reste à faire utilisateur** : merge PR #26 ; supprimer les 16 branches remote mergées (`git push origin --delete …`, commande fournie).
+
+---
 
 ## Session 9 : harnais de test runtime headless (autonomie agent / CI)
 
