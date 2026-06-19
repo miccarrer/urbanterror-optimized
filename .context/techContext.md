@@ -49,6 +49,37 @@ make BUILD_SERVER=0 USE_RENDERER_DLOPEN=0 RENDERER_DEFAULT=vulkan
 make clean && make -j$(nproc) 2>&1 | tail -5
 ```
 
+## Lancement local du client (machine de dev)
+
+Le jeu n'est **pas** installé : le client custom tourne depuis `build/` mais réutilise les
+**assets de l'install officielle**. Deux lanceurs dans `~/.local/bin/` :
+
+- **`urbanterror-optimized`** → notre client (`build/release-linux-x86_64/urbanterror-optimized.x64`).
+- **`urbanterror-official`** → le client UrT 4.3 d'origine (référence/comparaison).
+
+Chemins (FS) du lanceur `urbanterror-optimized` :
+
+| Rôle | Chemin | Usage |
+|------|--------|-------|
+| `fs_basepath` | `/home/michael/Jeux/UrbanTerror43` | assets officiels (pk3, maps) — **lecture seule** |
+| `fs_homepath` | `~/.local/share/urbanterror-optimized` | **écriture** : config, demos, screenshots, identities, themes |
+| `fs_downloadpath` | `~/.local/share/urbanterror-shared` | paks téléchargés (partagés ; `cfg`/`qkey` y sont symlinkés) |
+| `fs_game` | `q3ut4` | mod dir (tout est sous `<path>/q3ut4/`) |
+
+**Fichiers/dossiers importants** (sous `<fs_homepath>/q3ut4/`) :
+- `q3config.cfg` — config persistée (cvars `archive`, alias) ; `autoexec.cfg` — exécuté au boot.
+- `identities/<nom>.cfg` — profils d'identité (`loadidentity`/`saveidentity`).
+- **`themes/<nom>.cfg`** — thèmes d'UI (`theme`/`themesave`/`themelist`). C'est ici que `themesave`
+  écrit et que `theme` lit. **Les thèmes d'exemple du repo (`docs/themes/`) doivent être copiés ici**
+  pour être visibles en jeu :
+  ```bash
+  cp docs/themes/*.cfg ~/.local/share/urbanterror-optimized/q3ut4/themes/
+  ```
+- `q3history` — historique console persistant ; `servercache.dat` — cache navigateur de serveurs.
+
+> Note : `theme`/`identity` cherchent dans **tous** les search paths (`fs_homepath`, `fs_basepath`,
+> pk3) ; en pratique on dépose les fichiers dans le `q3ut4/` du `fs_homepath` (inscriptible).
+
 ## Environnement Shell
 
 **L'utilisateur utilise `fish` comme shell par défaut.**

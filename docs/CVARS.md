@@ -236,6 +236,46 @@ shown over the game when the console is closed) are configurable. `con_notifytim
 
 ---
 
+## Client — UI themes (console chrome)
+
+A **theme** is a named bundle of console-appearance cvars (colors + layout) that can be
+saved, switched and shared. It applies to the **engine-drawn console chrome** — the only UI
+the engine itself draws. (Menus and the in-game HUD are drawn by the game module and are
+customized through the usual UrT pk3 mechanism, not by these cvars.)
+
+The chrome colors below are all `R G B A`, components 0–255 (a missing alpha defaults to
+opaque). Each is faded by `con_opacity` along with the rest of the chrome; tab title text
+stays opaque.
+
+| Cvar | Default | Description |
+|------|:-------:|-------------|
+| `con_tabColor` | `51 51 61 255` | Active tab background. |
+| `con_tabColorInactive` | `18 18 23 255` | Inactive tab background. |
+| `con_accentColor` | `255 0 0 255` | Panel separator + tab borders. |
+| `con_titleColor` | `255 255 0 255` | Active tab title text. |
+| `con_titleColorInactive` | `255 255 255 255` | Inactive tab title text. |
+| `con_textColor` | `255 255 255 255` | Default console text (uncolored output + input prompt). Explicit `^`-color codes are kept, so a light theme can darken body text without losing chat colors. |
+| `con_separatorHeight` | `2` | Panel separator thickness in pixels. Range `1`–`8`. |
+| `cl_theme` | *(empty)* | Name of the active theme (set by the `theme` command). |
+
+| Command | Effect |
+|---------|--------|
+| `theme <name>` | Apply `themes/<name>.cfg` (and set `cl_theme`). |
+| `themesave <name>` | Write the current chrome + layout cvars to `themes/<name>.cfg`. |
+| `themelist` | List the available themes under `themes/`. |
+
+A theme is just a `.cfg` file under `<gamedir>/themes/` — **share it by sending the file**; the
+recipient drops it into their `themes/` and runs `theme <name>`. Example themes ship in
+[`docs/themes/`](themes/) (`dark` = default, `light`, `classic`).
+
+```
+\themesave mylook      # capture the current console look as themes/mylook.cfg
+\theme classic         # switch to the classic Quake 3 look
+\themelist             # see what is installed
+```
+
+---
+
 ## Cfg scripting — aliases, conditionals, cvar locks
 
 Console-scripting commands for richer `.cfg` files. All are local (never sent to the

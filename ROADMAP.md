@@ -268,6 +268,21 @@ scrollback + smart condump). Voir le plan de session.*
     Doc : [CVARS.md](docs/CVARS.md) § « console appearance & notify ».
 - **Lot 3** : à venir (recherche scrollback + smart condump + `con_notifyFilter`).
 
+### Feature #7 — Thèmes d'UI client (chrome console), partageables
+*Le moteur ne dessine que le chrome console (menus/HUD = game VM, hors périmètre). Un thème =
+bundle nommé de cvars d'apparence, sauvegardable/partageable. Voir le plan de session.*
+- **Phase 1 — couleurs + mise en page + commande `theme`** ✅ implémenté, `make smoke-client` vert :
+  - Couleurs du chrome exposées en cvars (`R G B A`) : `con_tabColor`, `con_tabColorInactive`,
+    `con_accentColor`, `con_titleColor`, `con_titleColorInactive` + `con_separatorHeight` ; helper
+    `Con_ParseColor` factorisé depuis le parseur `cl_conColor`.
+  - Commandes `theme` / `themesave` / `themelist` + complétion + cvar `cl_theme`, calquées sur le
+    système d'identités (`themes/<name>.cfg`, `Cbuf_InsertText`). Partage = envoi du `.cfg`.
+  - Thèmes d'exemple : [`docs/themes/`](docs/themes/) (`dark`/`light`/`classic`).
+  - **Fichier** : `cl_console.c`. Test : `tests/integration/cases/client/theme.cfg`. Doc :
+    [CVARS.md](docs/CVARS.md) § « UI themes ».
+- **Phase 2** : à venir (assets custom — police/charset + image de fond ré-enregistrés à chaud ;
+  packaging dossier/`.pk3` pour partager police + fond).
+
 ---
 
 ## 📋 Ordre d'exécution

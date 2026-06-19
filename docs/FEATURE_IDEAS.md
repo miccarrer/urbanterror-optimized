@@ -158,9 +158,15 @@ Sauvegarde de l'historique des commandes entre sessions.
 Verrouille une cvar contre les modifs accidentelles (configs compétitives).
 - **Accroche** : flag `CVAR_LOCKED` + check dans `Cvar_Set` — `cvar.c`.
 
-### Hauteur & transparence de console
-Hauteur configurable (hardcodée à 0.5) + opacité du fond.
-- **Accroche** : `con->finalFrac = 0.5` → `con_height->value` dans `Con_RunConsole`.
+### Hauteur & transparence de console ✅ livré (cfg-scripting Lot 2)
+`con_height` (0.1–1.0) + `con_opacity` (0–1) + notify (`con_notifyLines`/`con_notifyY`).
+
+### Thèmes d'UI client (chrome console) ✅ Phase 1 livrée
+Bundle nommé de cvars d'apparence (couleurs chrome + mise en page), partageable. Commandes
+`theme`/`themesave`/`themelist` (calque identités), thèmes d'exemple `docs/themes/`. **Phase 2
+à venir** : police/charset + image de fond custom (re-`RegisterShader` à chaud) + packaging `.pk3`.
+- **Accroche** : `Con_DrawSolidConsole`/`Con_ParseColor` (`cl_console.c`) ; `cls.charSetShader`/
+  `cls.consoleShader` (`cl_main.c:3301-3303`) pour les assets.
 
 ### Autocomplétion enrichie (fuzzy + descriptions)
 Fuzzy match + affichage des descriptions de cvars pendant la complétion.

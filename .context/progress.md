@@ -2,13 +2,26 @@
 
 ## État global du projet
 
-**Milestone actuel** : **scripting cfg — Lot 2** (session 13, branche `feature/cfg-scripting-lot2`).
-Console UX render-side : `con_height`/`con_opacity`/`con_notifyLines`/`con_notifyY` (`cl_console.c`,
-`NUM_CON_TIMES` 4→8). `make smoke-client` vert (cas `cases/client/console-ux.cfg`). **À committer +
-push + PR.** Précédemment : Lot 1 scripting (`alias`/`if`/`cvarlock`/`time`) MERGÉ (session 12,
+**Milestone actuel** : **Thèmes d'UI client — Phase 1** (session 14, branche `feature/ui-theme`).
+Chrome console thématisable : cvars couleur (`con_tabColor`/…/`con_accentColor`/titres) +
+`con_separatorHeight`, helper `Con_ParseColor`, commandes `theme`/`themesave`/`themelist` (calque
+identités, `themes/<name>.cfg`, partageable), exemples `docs/themes/`. `cl_console.c` seul.
+`make smoke-client` vert (cas `cases/client/theme.cfg`, 4/4). **À committer + push + PR** ; Phase 2 =
+assets custom (police/fond) + packaging `.pk3`. Précédemment : **Lot 2 console UX** committé
+`308bb3ed` sur `feature/cfg-scripting-lot2` (`con_height`/`con_opacity`/`con_notifyLines`/`con_notifyY`,
+`NUM_CON_TIMES` 4→8 ; à pousser) ; Lot 1 scripting (`alias`/`if`/`cvarlock`/`time`) MERGÉ (session 12,
 PR #28, `e0614bf2`) ; police des onglets `con_tabScale` (session 11, PR #27) ; `cm360` (session 10,
 PR #25/#26) ; harnais headless (session 9, PR #24). Fondations M0–M4 terminées ; M5 partiel ;
 M6 (release v0.2.0) publiée ; M7 terminé ; Feature #1 (identity) mergée PR #20.
+
+**Session 14 (2026-06-19) — Thèmes d'UI client (Phase 1)** : Feature #7. Notion de thème pour le
+chrome console (seul écran dessiné par le moteur ; menus/HUD = game VM, hors périmètre). Couleurs
+chrome exposées en cvars + `con_separatorHeight`, helper `Con_ParseColor` ; commandes `theme`/
+`themesave`/`themelist` + `cl_theme` calquées sur les identités (`themes/<name>.cfg`, partageable
+par envoi du fichier ; `Cbuf_InsertText`). Exemples `docs/themes/{dark,light,classic}.cfg`. Fichier
+`cl_console.c` seul. Test `cases/client/theme.cfg` (4/4, round-trip themesave→theme). Branche
+`feature/ui-theme` (à committer/push/PR). Phase 2 = assets custom (police/fond, `re.RegisterShader`
+à chaud) + packaging `.pk3`. Détails § `activeContext.md` Session 14.
 
 **Session 13 (2026-06-19) — scripting cfg (Lot 2, console UX)** : 2e des 3 lots. UX console
 render-side : `con_height` (0.1–1.0, remplace `0.5` hardcodé `Con_RunConsole`), `con_opacity` (0–1,

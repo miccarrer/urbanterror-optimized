@@ -1,7 +1,45 @@
 # Active Context — Urban Terror Optimized
 
 ## Dernière mise à jour
-2026-06-19 — Session 13 : **scripting cfg — Lot 2** (branche `feature/cfg-scripting-lot2`, depuis `main`). Console UX render-side : `con_height` (hauteur 0.1–1.0, remplace le `0.5` hardcodé), `con_opacity` (alpha du fond 0–1, deux chemins de `Con_DrawSolidConsole`), `con_notifyLines` (0–8) + `con_notifyY` (offset px) dans `Con_DrawNotify` (`NUM_CON_TIMES` 4→8). Seul fichier code : `cl_console.c`. **`make smoke-client` vert** (nouveau cas `cases/client/console-ux.cfg`, 3/3). Build client+serveur OK. **Reste à faire** : commit + push + PR ; puis Lot 3 (recherche scrollback + smart condump + `con_notifyFilter`).
+2026-06-19 — Session 14 : **Thèmes d'UI client — Phase 1** (branche `feature/ui-theme`, depuis `feature/cfg-scripting-lot2`). Notion de thème = bundle nommé de cvars d'apparence du **chrome console** (seul écran dessiné par le moteur ; menus/HUD = game VM, hors périmètre), partageable. Couleurs du chrome exposées en cvars (`con_tabColor`/`con_tabColorInactive`/`con_accentColor`/`con_titleColor`/`con_titleColorInactive` + `con_separatorHeight`) via helper `Con_ParseColor` ; commandes `theme`/`themesave`/`themelist` + cvar `cl_theme` calquées sur les identités (`themes/<name>.cfg`, `Cbuf_InsertText`). Thèmes d'exemple `docs/themes/` (dark/light/classic). Seul fichier code : `cl_console.c`. **`make smoke-client` vert** (nouveau cas `cases/client/theme.cfg`, 4/4). **Reste à faire** : commit + push + PR ; **Phase 2** = assets custom (police/charset + image de fond ré-enregistrés à chaud) + packaging `.pk3`. **Note** : Lot 2 (Session 13) committé `308bb3ed` sur `feature/cfg-scripting-lot2` (à pousser).
+
+## Session 14 : Thèmes d'UI client — Phase 1 (chrome console, partageable)
+
+**Branche** : `feature/ui-theme` (depuis `feature/cfg-scripting-lot2`, car étend la console du Lot 2). **Working tree à committer.**
+
+**Contexte** : l'utilisateur veut maximiser la customisation du client et **partager son thème**.
+Cadre d'archi établi : le moteur ne dessine que le **chrome console** (`cl_console.c`) + overlays
+mineurs ; menus/HUD = game VM (pk3), non thématisables → le thème porte sur le chrome (couleurs +
+mise en page, assets en Phase 2). Le besoin de partage tranche le mécanisme → **fichiers** (calque
+le système d'identités `identities/<name>.cfg`). Ambition validée : couleurs+mise en page+assets,
+**en phases**.
+
+**Livré (Phase 1, tout dans `cl_console.c`)** :
+- **Helper `Con_ParseColor`** — factorise le parseur inline de `cl_conColor` (`Com_Split`+`Q_atof`/255,
+  clamp [0,1], alpha manquant ⇒ opaque). Cache `cl_conColor` supprimé (parse par frame).
+- **Cvars couleur chrome** (`R G B A` 0–255, `CVAR_ARCHIVE_ND`) : `con_tabColor` (51 51 61 255),
+  `con_tabColorInactive` (18 18 23 255), `con_accentColor` (255 0 0 255, séparateur+bordures),
+  `con_titleColor` (jaune), `con_titleColorInactive` (blanc), **`con_textColor`** (blanc — couleur du
+  texte par défaut du corps + prompt ; recolore l'index blanc, garde les codes `^` ; indispensable au
+  thème light) + `con_separatorHeight` (2, range 1–8). Remplacent les littéraux hardcodés de
+  `Con_DrawSolidConsole`/`Con_DrawInput`. Fonds/accent fondus par `con_opacity`, titres/texte opaques.
+- **Commandes** `theme <name>` (valide nom via `Con_ValidThemeName`, `FS_FileExists`, **`Cbuf_InsertText`**
+  `exec themes/<name>.cfg`, set `cl_theme`), `themesave <name>` (écrit `seta` des cvars de thème —
+  liste `con_themeCvars[]` — via `FS_FOpenFileWrite`/`FS_Printf`), `themelist` (`FS_ListFiles`),
+  complétion `Field_CompleteFilename("themes",".cfg",…)`. Cvar `cl_theme`.
+- **`Cbuf_InsertText` (pas AddText)** pour `theme` : le thème s'applique avant les commandes suivantes
+  (intuitif + rend le round-trip assertable en `.cfg`, contrairement aux identités).
+- **Thèmes d'exemple** `docs/themes/{dark,light,classic}.cfg` (dark = défaut ; classic = `cl_conColor`
+  vide → image de fond Q3 d'origine).
+
+**Tests** : `cases/client/theme.cfg` — registration/clamp + round-trip `themesave`→`theme` (FS
+write/read OK en headless) + `theme` nom inexistant = inchangé. **`make smoke-client` : 4/4 PASS.**
+
+**Reste à faire** : commit + push + PR. **Phase 2** : cvars `con_charset`/`con_image` →
+`re.RegisterShader` à chaud (maj `cls.charSetShader`/`cls.consoleShader`, `cl_main.c:3301-3303`) +
+packaging dossier/`.pk3`. Vérif visuelle en jeu recommandée (rendu non couvert par le headless).
+
+---
 
 ## Session 13 : scripting cfg — Lot 2 (console UX : hauteur, opacité, notify)
 

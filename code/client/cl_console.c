@@ -94,6 +94,17 @@ cvar_t *con_height;   // fraction of the screen the open console covers
 cvar_t *con_opacity;  // alpha of the console background
 cvar_t *con_notifyLines; // number of notify lines drawn (<= NUM_CON_TIMES)
 cvar_t *con_notifyY;     // initial vertical offset of the notify area, in pixels
+// theme colors ("R G B A", 0-255) — the console chrome, themable via the theme command
+cvar_t *con_tabColor;           // active tab background
+cvar_t *con_tabColorInactive;   // inactive tab background
+cvar_t *con_accentColor;        // panel separator + tab borders
+cvar_t *con_titleColor;         // active tab title text
+cvar_t *con_titleColorInactive; // inactive tab title text
+cvar_t *con_textColor;          // default (uncolored) console body + prompt text
+cvar_t *con_separatorHeight;    // thickness of the panel separator, in pixels
+cvar_t *cl_theme;               // name of the active UI theme
+
+static void Con_ParseColor( const char *s, vec4_t out );
 
 int			g_console_field_width;
 
@@ -489,6 +500,148 @@ static void Cmd_CompleteTxtName(const char *args, int argNum ) {
 	}
 }
 
+// cvars that make up a UI theme — written by themesave, restored by exec'ing a theme file
+static const char *const con_themeCvars[] = {
+    "cl_conColor", "con_tabColor", "con_tabColorInactive", "con_accentColor",
+    "con_titleColor", "con_titleColorInactive", "con_textColor", "con_separatorHeight",
+    "con_height", "con_opacity", "con_tabScale", "con_scale",
+    "con_notifyLines", "con_notifyY", "con_notifytime", "cl_conXOffset" };
+
+/*
+==================
+Con_ValidThemeName
+
+A theme name becomes a file path (themes/<name>.cfg), so restrict it to a
+single safe path component: [A-Za-z0-9 _-] (no separators, no '.').
+==================
+*/
+static qboolean Con_ValidThemeName( const char *name ) {
+	int i;
+
+	if ( !name || !name[0] || strlen( name ) >= 64 )
+		return qfalse;
+
+	for ( i = 0; name[i]; i++ ) {
+		const char c = name[i];
+		if ( !( ( c >= 'a' && c <= 'z' ) || ( c >= 'A' && c <= 'Z' ) ||
+		        ( c >= '0' && c <= '9' ) || c == '_' || c == '-' || c == ' ' ) )
+			return qfalse;
+	}
+	return qtrue;
+}
+
+/*
+==================
+Con_Theme_f
+
+theme <name> — apply themes/<name>.cfg (a bundle of console-appearance cvars)
+and remember the choice in cl_theme.
+==================
+*/
+static void Con_Theme_f( void ) {
+	char filename[MAX_OSPATH];
+
+	if ( Cmd_Argc() != 2 ) {
+		Com_Printf( "Usage: theme <name>  (themelist to list, themesave to export)\n" );
+		return;
+	}
+
+	if ( !Con_ValidThemeName( Cmd_Argv( 1 ) ) ) {
+		Com_Printf( S_COLOR_YELLOW "Invalid theme name (letters, digits, spaces, '-' or '_').\n" );
+		return;
+	}
+
+	Com_sprintf( filename, sizeof( filename ), "themes/%s.cfg", Cmd_Argv( 1 ) );
+	if ( !FS_FileExists( filename ) ) {
+		Com_Printf( S_COLOR_YELLOW "Theme '%s' not found (%s).\n", Cmd_Argv( 1 ), filename );
+		return;
+	}
+
+	// insert (not append) so the theme applies before any following commands
+	Cbuf_InsertText( va( "exec \"%s\"\n", filename ) );
+	Cvar_Set( "cl_theme", Cmd_Argv( 1 ) );
+	Com_Printf( "Applied theme '%s'\n", Cmd_Argv( 1 ) );
+}
+
+/*
+==================
+Con_ThemeSave_f
+
+themesave <name> — write the current console-appearance cvars to
+themes/<name>.cfg so the look can be reused or shared.
+==================
+*/
+static void Con_ThemeSave_f( void ) {
+	char filename[MAX_OSPATH];
+	fileHandle_t f;
+	int i;
+
+	if ( Cmd_Argc() != 2 ) {
+		Com_Printf( "Usage: themesave <name>\n" );
+		return;
+	}
+
+	if ( !Con_ValidThemeName( Cmd_Argv( 1 ) ) ) {
+		Com_Printf( S_COLOR_YELLOW "Invalid theme name (letters, digits, spaces, '-' or '_').\n" );
+		return;
+	}
+
+	Com_sprintf( filename, sizeof( filename ), "themes/%s.cfg", Cmd_Argv( 1 ) );
+	f = FS_FOpenFileWrite( filename );
+	if ( f == FS_INVALID_HANDLE ) {
+		Com_Printf( S_COLOR_YELLOW "Couldn't write %s.\n", filename );
+		return;
+	}
+
+	FS_Printf( f, "// UI theme: %s" Q_NEWLINE, Cmd_Argv( 1 ) );
+	for ( i = 0; i < ARRAY_LEN( con_themeCvars ); i++ )
+		FS_Printf( f, "seta %s \"%s\"" Q_NEWLINE, con_themeCvars[i], Cvar_VariableString( con_themeCvars[i] ) );
+	FS_FCloseFile( f );
+
+	Cvar_Set( "cl_theme", Cmd_Argv( 1 ) );
+	Com_Printf( "Saved theme '%s' (%i cvars) to %s\n",
+	            Cmd_Argv( 1 ), (int)ARRAY_LEN( con_themeCvars ), filename );
+}
+
+/*
+==================
+Con_ThemeList_f
+
+themelist — list the available theme files under themes/.
+==================
+*/
+static void Con_ThemeList_f( void ) {
+	char **files;
+	int n, i;
+
+	files = FS_ListFiles( "themes", ".cfg", &n );
+	if ( !n ) {
+		Com_Printf( "No themes found in themes/.\n" );
+		FS_FreeFileList( files );
+		return;
+	}
+
+	Com_Printf( "Available themes:\n" );
+	for ( i = 0; i < n; i++ ) {
+		char name[MAX_OSPATH];
+		COM_StripExtension( files[i], name, sizeof( name ) );
+		Com_Printf( "  %s\n", name );
+	}
+	Com_Printf( "%i theme%s.\n", n, n == 1 ? "" : "s" );
+	FS_FreeFileList( files );
+}
+
+/*
+==================
+Con_CompleteThemeName
+
+Tab completion for theme / themesave.
+==================
+*/
+static void Con_CompleteThemeName( const char *args, int argNum ) {
+	if ( argNum == 2 )
+		Field_CompleteFilename( "themes", ".cfg", qtrue, FS_MATCH_EXTERN | FS_MATCH_STICK );
+}
 
 /*
 ================
@@ -524,6 +677,25 @@ void Con_Init( void )
 	Cvar_CheckRange( con_notifyY, "0", "600", CV_INTEGER );
 	Cvar_SetDescription( con_notifyY, "Vertical offset of the notify area, in pixels from the top of the screen." );
 
+	// console chrome colors ("R G B A", 0-255) — bundled and switched by the theme command
+	con_tabColor = Cvar_Get( "con_tabColor", "51 51 61 255", CVAR_ARCHIVE_ND );
+	Cvar_SetDescription( con_tabColor, "Active console tab background color (R G B A, 0-255)." );
+	con_tabColorInactive = Cvar_Get( "con_tabColorInactive", "18 18 23 255", CVAR_ARCHIVE_ND );
+	Cvar_SetDescription( con_tabColorInactive, "Inactive console tab background color (R G B A, 0-255)." );
+	con_accentColor = Cvar_Get( "con_accentColor", "255 0 0 255", CVAR_ARCHIVE_ND );
+	Cvar_SetDescription( con_accentColor, "Console accent color used for the panel separator and tab borders (R G B A, 0-255)." );
+	con_titleColor = Cvar_Get( "con_titleColor", "255 255 0 255", CVAR_ARCHIVE_ND );
+	Cvar_SetDescription( con_titleColor, "Active console tab title text color (R G B A, 0-255)." );
+	con_titleColorInactive = Cvar_Get( "con_titleColorInactive", "255 255 255 255", CVAR_ARCHIVE_ND );
+	Cvar_SetDescription( con_titleColorInactive, "Inactive console tab title text color (R G B A, 0-255)." );
+	con_textColor = Cvar_Get( "con_textColor", "255 255 255 255", CVAR_ARCHIVE_ND );
+	Cvar_SetDescription( con_textColor, "Default console text color for uncolored output and the input prompt (R G B A, 0-255); explicit color codes are kept." );
+	con_separatorHeight = Cvar_Get( "con_separatorHeight", "2", CVAR_ARCHIVE_ND );
+	Cvar_CheckRange( con_separatorHeight, "1", "8", CV_INTEGER );
+	Cvar_SetDescription( con_separatorHeight, "Thickness of the console panel separator, in pixels." );
+	cl_theme = Cvar_Get( "cl_theme", "", CVAR_ARCHIVE_ND );
+	Cvar_SetDescription( cl_theme, "Name of the active UI theme (set by the theme command)." );
+
 	Field_Clear( &g_consoleField );
 	g_consoleField.widthInChars = g_console_field_width;
 
@@ -532,6 +704,11 @@ void Con_Init( void )
 	Cmd_AddCommand( "clear", Con_Clear_f );
 	Cmd_AddCommand( "condump", Con_Dump_f );
 	Cmd_SetCommandCompletionFunc( "condump", Cmd_CompleteTxtName );
+	Cmd_AddCommand( "theme", Con_Theme_f );
+	Cmd_SetCommandCompletionFunc( "theme", Con_CompleteThemeName );
+	Cmd_AddCommand( "themesave", Con_ThemeSave_f );
+	Cmd_SetCommandCompletionFunc( "themesave", Con_CompleteThemeName );
+	Cmd_AddCommand( "themelist", Con_ThemeList_f );
 	Cmd_AddCommand( "toggleconsole", Con_ToggleConsole_f );
 	Cmd_AddCommand( "messagemode", Con_MessageMode_f );
 	Cmd_AddCommand( "messagemode2", Con_MessageMode2_f );
@@ -783,6 +960,7 @@ Draw the editline after a ] prompt
 */
 static void Con_DrawInput( void ) {
 	int		y;
+	vec4_t textColor;
 
 	if ( cls.state != CA_DISCONNECTED && !(Key_GetCatcher( ) & KEYCATCH_CONSOLE ) ) {
 		return;
@@ -790,7 +968,8 @@ static void Con_DrawInput( void ) {
 
 	y = con->vislines - smallchar_height - ( smallchar_height / 3 );
 
-	re.SetColor( con->color );
+	Con_ParseColor( con_textColor->string, textColor );
+	re.SetColor( textColor );
 
 	SCR_DrawSmallChar( con->xadjust + 1 * smallchar_width, y, ']' );
 
@@ -914,17 +1093,42 @@ static void Con_DrawScaledChar( int x, int y, int w, int h, int ch ) {
 
 /*
 ================
+Con_ParseColor
+
+Parse an "R G B A" string (components 0-255) into a normalized RGBA color.
+Missing components default to 0, except a missing alpha which defaults to
+opaque; values are clamped to [0,1]. Used by the themable console colors.
+================
+*/
+static void Con_ParseColor( const char *s, vec4_t out ) {
+	char buf[MAX_CVAR_VALUE_STRING];
+	char *v[4];
+	int i;
+
+	out[0] = out[1] = out[2] = 0.0f;
+	out[3] = 1.0f; // opaque if alpha is omitted
+
+	Q_strncpyz( buf, s, sizeof( buf ) );
+	Com_Split( buf, v, 4, ' ' );
+	for ( i = 0; i < 4; i++ ) {
+		if ( v[i][0] == '\0' )
+			continue; // keep the default (notably alpha)
+		out[i] = Q_atof( v[i] ) / 255.0f;
+		if ( out[i] > 1.0f )
+			out[i] = 1.0f;
+		else if ( out[i] < 0.0f )
+			out[i] = 0.0f;
+	}
+}
+
+/*
+================
 Con_DrawSolidConsole
 
 Draws the console with the solid background
 ================
 */
 static void Con_DrawSolidConsole( float frac ) {
-
-	static float conColorValue[4] = { 0.0, 0.0, 0.0, 0.0 };
-	// for cvar value change tracking
-	static char  conColorString[ MAX_CVAR_VALUE_STRING ] = { '\0' };
-
 	int				i, x, y;
 	int				rows;
 	short			*text;
@@ -934,8 +1138,10 @@ static void Con_DrawSolidConsole( float frac ) {
 	int				colorIndex;
 	float			yf, wf;
 	vec4_t conDrawColor;
+	vec4_t textColor;         // default console text color (con_textColor)
+	int whiteIndex;           // color index treated as "default" text
 	int tabX0 = 0, tabX1 = 0; // x-span covered by the tab bar (0 = none)
-	char			buf[ MAX_CVAR_VALUE_STRING ], *v[4];
+	int sepH;                 // panel separator thickness (con_separatorHeight)
 
 	lines = cls.glconfig.vidHeight * frac;
 	if ( lines <= 0 )
@@ -961,23 +1167,7 @@ static void Con_DrawSolidConsole( float frac ) {
 	} else {
 		// custom console background color
 		if ( cl_conColor->string[0] ) {
-			// track changes
-			if ( strcmp( cl_conColor->string, conColorString ) ) 
-			{
-				Q_strncpyz( conColorString, cl_conColor->string, sizeof( conColorString ) );
-				Q_strncpyz( buf, cl_conColor->string, sizeof( buf ) );
-				Com_Split( buf, v, 4, ' ' );
-				for ( i = 0; i < 4 ; i++ ) {
-					conColorValue[ i ] = Q_atof( v[ i ] ) / 255.0f;
-					if ( conColorValue[ i ] > 1.0f ) {
-						conColorValue[ i ] = 1.0f;
-					} else if ( conColorValue[ i ] < 0.0f ) {
-						conColorValue[ i ] = 0.0f;
-					}
-				}
-			}
-			// apply con_opacity on a local copy so the cached value is preserved
-			Vector4Copy( conColorValue, conDrawColor );
+			Con_ParseColor( cl_conColor->string, conDrawColor );
 			conDrawColor[3] *= con_opacity->value;
 			re.SetColor( conDrawColor );
 			re.DrawStretchPic( 0, 0, wf, yf, 0, 0, 1, 1, cls.whiteShader );
@@ -999,23 +1189,24 @@ static void Con_DrawSolidConsole( float frac ) {
 	// the active one highlighted, with a 1px border. Drawn in pixel space to line
 	// up with the small-char text. Switch with shift+left/right or mouse buttons.
 	if ( con_tabs->integer ) {
-		// filled backgrounds + a red outline on the sides + bottom, so the red
-		// border wraps the tabs as one shape with the console. Fills and border
-		// are faded by con_opacity to match the (translucent) console background.
-		static const vec4_t bgActive = { 0.20f, 0.20f, 0.24f, 1.00f };
-		static const vec4_t bgInactive = { 0.07f, 0.07f, 0.09f, 1.00f };
-		vec4_t bgA, bgI, red;
+		// filled backgrounds + an accent outline on the sides + bottom, so the
+		// accent border wraps the tabs as one shape with the console. Fills and
+		// border are faded by con_opacity to match the (translucent) background;
+		// titles stay opaque for readability. All colors come from theme cvars.
+		vec4_t bgA, bgI, accent, titleA, titleI;
 		float op = con_opacity->value;
 		// tab titles are drawn a bit larger than the body text (con_tabScale)
 		float tscale = con_tabScale->value;
 		int cw, chh, th, ty, tx, tpad, t, k, tw;
 
-		Vector4Copy( bgActive, bgA );
-		Vector4Copy( bgInactive, bgI );
-		Vector4Copy( g_color_table[ColorIndex( COLOR_RED )], red );
+		Con_ParseColor( con_tabColor->string, bgA );
+		Con_ParseColor( con_tabColorInactive->string, bgI );
+		Con_ParseColor( con_accentColor->string, accent );
+		Con_ParseColor( con_titleColor->string, titleA );
+		Con_ParseColor( con_titleColorInactive->string, titleI );
 		bgA[3] *= op;
 		bgI[3] *= op;
-		red[3] *= op;
+		accent[3] *= op;
 
 		// con_tabScale is range-checked at registration, but clamp the derived
 		// pixel sizes to explicit bounds so the tab-layout arithmetic below is
@@ -1058,12 +1249,12 @@ static void Con_DrawSolidConsole( float frac ) {
 			re.SetColor( active ? bgA : bgI );
 			re.DrawStretchPic( tx, ty, tw, th, 0, 0, 0, 0, cls.whiteShader );
 
-			re.SetColor( red );
+			re.SetColor( accent );
 			re.DrawStretchPic( tx, ty, 1, th, 0, 0, 0, 0, cls.whiteShader );          // left
 			re.DrawStretchPic( tx + tw - 1, ty, 1, th, 0, 0, 0, 0, cls.whiteShader ); // right
 			re.DrawStretchPic( tx, ty + th - 2, tw, 2, 0, 0, 0, 0, cls.whiteShader ); // bottom
 
-			re.SetColor( g_color_table[ColorIndex( active ? COLOR_YELLOW : COLOR_WHITE )] );
+			re.SetColor( active ? titleA : titleI );
 			for ( k = 0; k < nlen; k++ )
 				Con_DrawScaledChar( tx + ( k + 1 ) * cw, ty + tpad, cw, chh, con_names[t][k] );
 
@@ -1073,19 +1264,21 @@ static void Con_DrawSolidConsole( float frac ) {
 		tabX1 = tx; // right edge of the tab strip
 	}
 
-	// the panel's bottom red separator, faded with the background (con_opacity).
-	// When the tab bar is shown, skip the span it covers so the panel and tabs
-	// read as one shape (no red line bleeding through the translucent tab fills).
-	Vector4Copy( g_color_table[ColorIndex( COLOR_RED )], conDrawColor );
+	// the panel's bottom separator (accent color), faded with the background
+	// (con_opacity). When the tab bar is shown, skip the span it covers so the
+	// panel and tabs read as one shape (no line bleeding through the translucent
+	// tab fills). Thickness is con_separatorHeight.
+	sepH = con_separatorHeight->integer;
+	Con_ParseColor( con_accentColor->string, conDrawColor );
 	conDrawColor[3] *= con_opacity->value;
 	re.SetColor( conDrawColor );
 	if ( tabX1 > tabX0 ) {
 		if ( tabX0 > 0 )
-			re.DrawStretchPic( 0, yf, tabX0, 2, 0, 0, 1, 1, cls.whiteShader ); // left of tabs
+			re.DrawStretchPic( 0, yf, tabX0, sepH, 0, 0, 1, 1, cls.whiteShader ); // left of tabs
 		if ( tabX1 < wf )
-			re.DrawStretchPic( tabX1, yf, wf - tabX1, 2, 0, 0, 1, 1, cls.whiteShader ); // right of tabs
+			re.DrawStretchPic( tabX1, yf, wf - tabX1, sepH, 0, 0, 1, 1, cls.whiteShader ); // right of tabs
 	} else {
-		re.DrawStretchPic( 0, yf, wf, 2, 0, 0, 1, 1, cls.whiteShader );
+		re.DrawStretchPic( 0, yf, wf, sepH, 0, 0, 1, 1, cls.whiteShader );
 	}
 
 	// draw the text
@@ -1121,8 +1314,13 @@ static void Con_DrawSolidConsole( float frac ) {
 	}
 #endif
 
-	currentColorIndex = ColorIndex( COLOR_WHITE );
-	re.SetColor( g_color_table[ currentColorIndex ] );
+	// default (uncolored) text uses con_textColor; explicit color codes keep
+	// their g_color_table color. So a light theme can darken the body text
+	// without losing chat / colored output.
+	Con_ParseColor( con_textColor->string, textColor );
+	whiteIndex = ColorIndex( COLOR_WHITE );
+	currentColorIndex = whiteIndex;
+	re.SetColor( textColor );
 
 	for ( i = 0 ; i < rows ; i++, y -= smallchar_height, row-- )
 	{
@@ -1145,7 +1343,7 @@ static void Con_DrawSolidConsole( float frac ) {
 			colorIndex = ( text[ x ] >> 8 ) & 63;
 			if ( currentColorIndex != colorIndex ) {
 				currentColorIndex = colorIndex;
-				re.SetColor( g_color_table[ colorIndex ] );
+				re.SetColor( colorIndex == whiteIndex ? textColor : g_color_table[colorIndex] );
 			}
 			SCR_DrawSmallChar( con->xadjust + ( x + 1 ) * smallchar_width, y, text[x] & 0xff );
 		}
@@ -1156,7 +1354,6 @@ static void Con_DrawSolidConsole( float frac ) {
 
 	re.SetColor( NULL );
 }
-
 
 /*
 ==================
