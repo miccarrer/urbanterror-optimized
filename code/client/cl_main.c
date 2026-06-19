@@ -1848,6 +1848,12 @@ static void CL_Vid_Restart( refShutdownCode_t shutdownCode ) {
 	}
 
 	cls.startCgame = qfalse;
+
+	// the renderer reset cleared any theme shader remaps and re-registered the
+	// console assets to their defaults; re-apply the active theme so its remaps
+	// and asset overrides survive a vid_restart.
+	if ( cl_theme && cl_theme->string[0] )
+		Cbuf_AddText( va( "theme \"%s\"\n", cl_theme->string ) );
 }
 
 

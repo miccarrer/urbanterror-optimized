@@ -102,6 +102,8 @@ cvar_t *con_titleColor;         // active tab title text
 cvar_t *con_titleColorInactive; // inactive tab title text
 cvar_t *con_textColor;          // default (uncolored) console body + prompt text
 cvar_t *con_separatorHeight;    // thickness of the panel separator, in pixels
+cvar_t *con_charset;            // shader/image for the console font (default gfx/2d/bigchars)
+cvar_t *con_image;              // shader/image for the console background (default "console")
 cvar_t *cl_theme;               // name of the active UI theme
 
 static void Con_ParseColor( const char *s, vec4_t out );
@@ -504,6 +506,7 @@ static void Cmd_CompleteTxtName(const char *args, int argNum ) {
 static const char *const con_themeCvars[] = {
     "cl_conColor", "con_tabColor", "con_tabColorInactive", "con_accentColor",
     "con_titleColor", "con_titleColorInactive", "con_textColor", "con_separatorHeight",
+    "con_charset", "con_image",
     "con_height", "con_opacity", "con_tabScale", "con_scale",
     "con_notifyLines", "con_notifyY", "con_notifytime", "cl_conXOffset" };
 
@@ -693,6 +696,10 @@ void Con_Init( void )
 	con_separatorHeight = Cvar_Get( "con_separatorHeight", "2", CVAR_ARCHIVE_ND );
 	Cvar_CheckRange( con_separatorHeight, "1", "8", CV_INTEGER );
 	Cvar_SetDescription( con_separatorHeight, "Thickness of the console panel separator, in pixels." );
+	con_charset = Cvar_Get( "con_charset", "gfx/2d/bigchars", CVAR_ARCHIVE_ND );
+	Cvar_SetDescription( con_charset, "Shader/image used for the console font (themable); default gfx/2d/bigchars." );
+	con_image = Cvar_Get( "con_image", "console", CVAR_ARCHIVE_ND );
+	Cvar_SetDescription( con_image, "Shader/image used for the console background (themable); used when cl_conColor is empty." );
 	cl_theme = Cvar_Get( "cl_theme", "", CVAR_ARCHIVE_ND );
 	Cvar_SetDescription( cl_theme, "Name of the active UI theme (set by the theme command)." );
 
@@ -1146,6 +1153,14 @@ static void Con_DrawSolidConsole( float frac ) {
 	lines = cls.glconfig.vidHeight * frac;
 	if ( lines <= 0 )
 		return;
+
+	// themable console assets: re-register the font/background each draw so a
+	// theme (or vid_restart, which resets them) takes effect. RegisterShader is
+	// cached, so this is just a hash lookup once the asset is loaded.
+	if ( con_charset->string[0] )
+		cls.charSetShader = re.RegisterShader( con_charset->string );
+	if ( con_image->string[0] )
+		cls.consoleShader = re.RegisterShader( con_image->string );
 
 	if ( re.FinishBloom )
 		re.FinishBloom();

@@ -256,13 +256,16 @@ stays opaque.
 | `con_titleColorInactive` | `255 255 255 255` | Inactive tab title text. |
 | `con_textColor` | `255 255 255 255` | Default console text (uncolored output + input prompt). Explicit `^`-color codes are kept, so a light theme can darken body text without losing chat colors. |
 | `con_separatorHeight` | `2` | Panel separator thickness in pixels. Range `1`–`8`. |
+| `con_charset` | `gfx/2d/bigchars` | Shader/image for the console **font** (themable). |
+| `con_image` | `console` | Shader/image for the console **background** (used when `cl_conColor` is empty). |
 | `cl_theme` | *(empty)* | Name of the active theme (set by the `theme` command). |
 
 | Command | Effect |
 |---------|--------|
-| `theme <name>` | Apply `themes/<name>.cfg` (and set `cl_theme`). |
+| `theme <name>` | Apply `themes/<name>.cfg` (and set `cl_theme`). Re-applied automatically after `vid_restart`. |
 | `themesave <name>` | Write the current chrome + layout cvars to `themes/<name>.cfg`. |
 | `themelist` | List the available themes under `themes/`. |
+| `remapShader <old> <new> [t]` | Replace a **UI/2D** shader/image with another (see below). |
 
 A theme is just a `.cfg` file under `<gamedir>/themes/` — **share it by sending the file**; the
 recipient drops it into their `themes/` and runs `theme <name>`. Example themes ship in
@@ -273,6 +276,27 @@ recipient drops it into their `themes/` and runs `theme <name>`. Example themes 
 \theme classic         # switch to the classic Quake 3 look
 \themelist             # see what is installed
 ```
+
+### Restyling menus / HUD assets (`remapShader`)
+
+The engine doesn't draw the menus, HUD or scoreboard (the game module does), so a theme can't
+change their *layout*. It can, however, **swap the 2D images they draw** with `remapShader`:
+
+```
+remapShader gfx/2d/crosshairb mytheme/crosshair    # restyle a crosshair
+remapShader gfx/2d/bigchars   mytheme/font          # restyle the bitmap font
+```
+
+For safety, `remapShader` only accepts **UI/2D** source names — prefixes `ui/`, `menu/`, `hud/`,
+`gfx/2d/`. World and player shaders (`textures/…`, `models/…`) are refused, so it cannot be used
+for texture wallhacks. Remaps are re-applied automatically on `vid_restart` (via `cl_theme`).
+
+A **shareable visual theme pack** is therefore a `.pk3` (with the replacement images under
+`gfx/2d/…`, `ui/…`) plus a `themes/<name>.cfg` that sets the chrome cvars and issues the
+`remapShader` / `con_charset` / `con_image` lines. `themesave` captures the cvars; add any
+`remapShader` lines to the `.cfg` by hand. The replacement font/menu images must exist in a
+loaded pak. (Note: in-VM *fonts* registered via the font API can't be remapped — only
+bitmap-charset shaders like `gfx/2d/bigchars`.)
 
 ---
 

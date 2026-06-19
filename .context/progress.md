@@ -2,17 +2,28 @@
 
 ## État global du projet
 
-**Milestone actuel** : **Thèmes d'UI client — Phase 1** (session 14, branche `feature/ui-theme`).
-Chrome console thématisable : cvars couleur (`con_tabColor`/…/`con_accentColor`/titres) +
-`con_separatorHeight`, helper `Con_ParseColor`, commandes `theme`/`themesave`/`themelist` (calque
-identités, `themes/<name>.cfg`, partageable), exemples `docs/themes/`. `cl_console.c` seul.
-`make smoke-client` vert (cas `cases/client/theme.cfg`, 4/4). **À committer + push + PR** ; Phase 2 =
-assets custom (police/fond) + packaging `.pk3`. Précédemment : **Lot 2 console UX** committé
+**Milestone actuel** : **Thèmes d'UI client — Phase 2** (session 15, branche `feature/ui-theme`).
+Restyle des assets 2D menus/HUD sans toucher au game VM : commande `remapShader` (allowlist UI/2D
+anti-wallhack, `cl_scrn.c`), cvars `con_charset`/`con_image` (police+fond console à chaud), ré-appli
+du thème après `vid_restart`. `make smoke-client` vert (`theme.cfg` étendu, 4/4). **Phases 1+2 à
+committer + push + PR** sur `feature/ui-theme`. Étude faisabilité menus/HUD : reprise moteur infaisable
+(logique = VM UrT fermées) → seul le remap d'assets est possible. Précédemment : **Thèmes Phase 1**
+(chrome console : couleurs/`con_*`, `theme`/`themesave`/`themelist`, exemples `docs/themes/`) ;
+**Lot 2 console UX** committé
 `308bb3ed` sur `feature/cfg-scripting-lot2` (`con_height`/`con_opacity`/`con_notifyLines`/`con_notifyY`,
 `NUM_CON_TIMES` 4→8 ; à pousser) ; Lot 1 scripting (`alias`/`if`/`cvarlock`/`time`) MERGÉ (session 12,
 PR #28, `e0614bf2`) ; police des onglets `con_tabScale` (session 11, PR #27) ; `cm360` (session 10,
 PR #25/#26) ; harnais headless (session 9, PR #24). Fondations M0–M4 terminées ; M5 partiel ;
 M6 (release v0.2.0) publiée ; M7 terminé ; Feature #1 (identity) mergée PR #20.
+
+**Session 15 (2026-06-19) — Thèmes Phase 2 (remap assets UI/2D)** : Feature #7 Phase 2. Étude
+faisabilité menus/HUD → reprise moteur infaisable (logique = VM UrT fermées) ; voie retenue =
+restyler les assets 2D via `RE_RemapShader`. Commande `remapShader <old> <new>` (`cl_scrn.c`) gardée
+par allowlist UI/2D (`ui/`/`menu/`/`hud/`/`gfx/2d/`, anti-wallhack) ; cvars `con_charset`/`con_image`
+(police+fond console ré-enregistrés à chaud, `cl_console.c`) ajoutés à `con_themeCvars[]` ;
+ré-application du thème après `vid_restart` (`cl_main.c`, via `cl_theme` extern). Test `theme.cfg`
+étendu (4/4). Limites : logique menus/HUD inchangée, polices VM non remappables. Détails §
+`activeContext.md` Session 15.
 
 **Session 14 (2026-06-19) — Thèmes d'UI client (Phase 1)** : Feature #7. Notion de thème pour le
 chrome console (seul écran dessiné par le moteur ; menus/HUD = game VM, hors périmètre). Couleurs

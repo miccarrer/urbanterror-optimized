@@ -280,8 +280,17 @@ bundle nommé de cvars d'apparence, sauvegardable/partageable. Voir le plan de s
   - Thèmes d'exemple : [`docs/themes/`](docs/themes/) (`dark`/`light`/`classic`).
   - **Fichier** : `cl_console.c`. Test : `tests/integration/cases/client/theme.cfg`. Doc :
     [CVARS.md](docs/CVARS.md) § « UI themes ».
-- **Phase 2** : à venir (assets custom — police/charset + image de fond ré-enregistrés à chaud ;
-  packaging dossier/`.pk3` pour partager police + fond).
+- **Phase 2 — assets : remap shader + police/fond console** ✅ implémenté, `make smoke-client` vert :
+  - Commande **`remapShader <old> <new>`** (`cl_scrn.c`) → `re.RemapShader`, **gardée par allowlist
+    UI/2D** (`ui/`/`menu/`/`hud/`/`gfx/2d/`) pour bloquer les remaps gameplay (wallhack). Permet de
+    restyler menus/HUD/crosshair sans toucher au game VM.
+  - `con_charset` / `con_image` (`cl_console.c`) — police + fond de console ré-enregistrés à chaud
+    (`re.RegisterShader` par frame, caché). Ajoutés à `con_themeCvars[]`.
+  - Ré-application du thème après `vid_restart` (`CL_Vid_Restart`, `cl_main.c`) via `cl_theme` —
+    les remaps survivent au reset renderer.
+  - Format **pack partageable** : `.pk3` (assets `gfx/2d/…`) + `themes/<n>.cfg` (cvars + `remapShader`).
+  - Doc : [CVARS.md](docs/CVARS.md) § « Restyling menus / HUD assets ». Test : `cases/client/theme.cfg`.
+  - **Limites** : logique menus/HUD inchangée (VM UrT) ; polices VM (`R_REGISTERFONT`) non remappables.
 
 ---
 

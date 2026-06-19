@@ -484,6 +484,56 @@ static void SCR_DrawDebugGraph( void )
 
 //=============================================================================
 
+// remapShader is restricted to UI/2D asset namespaces so themes can restyle the
+// menus / HUD / crosshair / font without enabling texture-based cheats: wallhack
+// vectors live under textures/ and models/, which are deliberately NOT listed here.
+static const char *const scr_remapSafePrefixes[] = {
+    "ui/", "menu/", "hud/", "gfx/2d/" };
+
+/*
+==================
+SCR_RemapShader_f
+
+remapShader <old> <new> [timeOffset] — replace a UI/2D shader/image with another,
+letting themes restyle the menus and 2D HUD without touching the game VM. The old
+name must be in a safe UI/2D namespace (see scr_remapSafePrefixes).
+==================
+*/
+static void SCR_RemapShader_f( void ) {
+	const char *oldShader, *newShader, *offset;
+	int i;
+	qboolean allowed = qfalse;
+
+	if ( Cmd_Argc() < 3 ) {
+		Com_Printf( "Usage: remapShader <old> <new> [timeOffset]\n" );
+		return;
+	}
+
+	if ( !cls.rendererStarted ) {
+		Com_Printf( S_COLOR_YELLOW "remapShader: renderer not started.\n" );
+		return;
+	}
+
+	oldShader = Cmd_Argv( 1 );
+	newShader = Cmd_Argv( 2 );
+	offset = ( Cmd_Argc() > 3 ) ? Cmd_Argv( 3 ) : "0";
+
+	// anti-cheat: only UI/2D assets may be remapped
+	for ( i = 0; i < ARRAY_LEN( scr_remapSafePrefixes ); i++ ) {
+		if ( !Q_stricmpn( oldShader, scr_remapSafePrefixes[i], strlen( scr_remapSafePrefixes[i] ) ) ) {
+			allowed = qtrue;
+			break;
+		}
+	}
+	if ( !allowed ) {
+		Com_Printf( S_COLOR_YELLOW "remapShader: '%s' is not a UI/2D asset; only ui/ menu/ hud/ gfx/2d/ may be remapped.\n",
+		            oldShader );
+		return;
+	}
+
+	re.RemapShader( oldShader, newShader, offset );
+}
+
 /*
 ==================
 SCR_Init
@@ -495,6 +545,8 @@ void SCR_Init( void ) {
 	cl_graphheight = Cvar_Get ("graphheight", "32", CVAR_CHEAT);
 	cl_graphscale = Cvar_Get ("graphscale", "1", CVAR_CHEAT);
 	cl_graphshift = Cvar_Get ("graphshift", "0", CVAR_CHEAT);
+
+	Cmd_AddCommand( "remapShader", SCR_RemapShader_f );
 
 	scr_initialized = qtrue;
 }

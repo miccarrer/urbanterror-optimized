@@ -1,7 +1,40 @@
 # Active Context — Urban Terror Optimized
 
 ## Dernière mise à jour
-2026-06-19 — Session 14 : **Thèmes d'UI client — Phase 1** (branche `feature/ui-theme`, depuis `feature/cfg-scripting-lot2`). Notion de thème = bundle nommé de cvars d'apparence du **chrome console** (seul écran dessiné par le moteur ; menus/HUD = game VM, hors périmètre), partageable. Couleurs du chrome exposées en cvars (`con_tabColor`/`con_tabColorInactive`/`con_accentColor`/`con_titleColor`/`con_titleColorInactive` + `con_separatorHeight`) via helper `Con_ParseColor` ; commandes `theme`/`themesave`/`themelist` + cvar `cl_theme` calquées sur les identités (`themes/<name>.cfg`, `Cbuf_InsertText`). Thèmes d'exemple `docs/themes/` (dark/light/classic). Seul fichier code : `cl_console.c`. **`make smoke-client` vert** (nouveau cas `cases/client/theme.cfg`, 4/4). **Reste à faire** : commit + push + PR ; **Phase 2** = assets custom (police/charset + image de fond ré-enregistrés à chaud) + packaging `.pk3`. **Note** : Lot 2 (Session 13) committé `308bb3ed` sur `feature/cfg-scripting-lot2` (à pousser).
+2026-06-19 — Session 15 : **Thèmes d'UI client — Phase 2** (assets/remap, branche `feature/ui-theme`). Suite de l'étude de faisabilité menus/HUD : le moteur **ne peut pas** reprendre menus/HUD/scoreboard (logique = VM UrT fermées), mais peut **restyler leurs assets 2D** via `RE_RemapShader` sans toucher à la logique. Livré : commande **`remapShader <old> <new> [t]`** (`cl_scrn.c`) gardée par **allowlist UI/2D** (`ui/`/`menu/`/`hud/`/`gfx/2d/`, anti-wallhack) ; cvars `con_charset`/`con_image` (police+fond console ré-enregistrés à chaud, `cl_console.c`) ; **ré-application du thème après `vid_restart`** (`CL_Vid_Restart`, via `cl_theme` exposé en extern `client.h`). `con_charset`/`con_image` ajoutés à `con_themeCvars[]`. Pack partageable = `.pk3` (assets) + `themes/<n>.cfg` (cvars + `remapShader`). **`make smoke-client` vert** (`theme.cfg` étendu, 4/4). **Reste à faire** : commit + push + PR (Phases 1+2 sur `feature/ui-theme`). Décision anti-triche utilisateur : **restreindre aux assets UI/2D**.
+
+## Session 15 : Thèmes — Phase 2 (remap d'assets UI/2D + police/fond console)
+
+**Branche** : `feature/ui-theme` (continuité Phase 1). **Working tree à committer.**
+
+**Contexte** : l'utilisateur a demandé honnêtement si le moteur pourrait gérer menus/HUD/scoreboard.
+**Étude de faisabilité** (consignée plan) : repo = en-têtes d'interface seuls (`code/{ui,cgame,game}/*_public.h`),
+impl menus/HUD = `ui.qvm`/`cgame.qvm` **UrT fermés** ; HUD/scoreboard sont des **vues du gamestate**
+que seul le mod connaît → reprise = forker le jeu, **infaisable en pratique**. Menus = faisable mais
+non rentable. **Voie retenue** : restyler les **assets 2D** que la VM dessine via `RE_RemapShader`
+(le moteur expose déjà `CG_R_REMAP_SHADER`/`UI_R_REMAP_SHADER`).
+
+**Livré (Phase 2)** :
+- **`remapShader <old> <new> [timeOffset]`** (`cl_scrn.c`, `SCR_RemapShader_f` + enregistrée dans
+  `SCR_Init`) → `re.RemapShader`. **Garde anti-triche** : `old` doit matcher `scr_remapSafePrefixes[]`
+  (`ui/`/`menu/`/`hud/`/`gfx/2d/`) — bloque `textures/`/`models/` (vecteurs wallhack). `new` libre.
+  `RE_RemapShader` auto-enregistre les shaders absents (timing tolérant). Null renderer = no-op (headless OK).
+- **`con_charset`** (`gfx/2d/bigchars`) + **`con_image`** (`console`) (`cl_console.c`) — ré-enregistrés
+  à chaud en tête de `Con_DrawSolidConsole` (`re.RegisterShader`, caché ; survit à `vid_restart` car
+  ré-appliqué chaque frame de dessin). Ajoutés à `con_themeCvars[]` (capturés par `themesave`).
+- **Ré-application après `vid_restart`** : fin de `CL_Vid_Restart` (`cl_main.c`), si `cl_theme` set →
+  `Cbuf_AddText("theme <nom>")` (les remaps sont perdus au reset renderer). `cl_theme` extern (`client.h`).
+
+**Tests** : `cases/client/theme.cfg` étendu — `assert_command remapShader`, `con_charset`/`con_image`
+défauts, remap préfixe autorisé (no-op) + interdit (refus) sans crash → `quit 0`. **`make smoke-client` : 4/4 PASS.**
+
+**Reste à faire** : commit + push + PR (Phases 1+2). Vérif visuelle en jeu (remap réel + `vid_restart`).
+**Limites honnêtes** : logique menus/HUD inchangée (VM) ; polices VM (`R_REGISTERFONT`) non remappables ;
+allowlist par préfixe = compromis sûreté.
+
+---
+
+## Session 14 : Thèmes d'UI client — Phase 1 (chrome console, partageable) Notion de thème = bundle nommé de cvars d'apparence du **chrome console** (seul écran dessiné par le moteur ; menus/HUD = game VM, hors périmètre), partageable. Couleurs du chrome exposées en cvars (`con_tabColor`/`con_tabColorInactive`/`con_accentColor`/`con_titleColor`/`con_titleColorInactive` + `con_separatorHeight`) via helper `Con_ParseColor` ; commandes `theme`/`themesave`/`themelist` + cvar `cl_theme` calquées sur les identités (`themes/<name>.cfg`, `Cbuf_InsertText`). Thèmes d'exemple `docs/themes/` (dark/light/classic). Seul fichier code : `cl_console.c`. **`make smoke-client` vert** (nouveau cas `cases/client/theme.cfg`, 4/4). **Reste à faire** : commit + push + PR ; **Phase 2** = assets custom (police/charset + image de fond ré-enregistrés à chaud) + packaging `.pk3`. **Note** : Lot 2 (Session 13) committé `308bb3ed` sur `feature/cfg-scripting-lot2` (à pousser).
 
 ## Session 14 : Thèmes d'UI client — Phase 1 (chrome console, partageable)
 
