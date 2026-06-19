@@ -289,9 +289,11 @@ remapShader gfx/2d/crosshairb mytheme/crosshair    # restyle a crosshair
 remapShader gfx/2d/bigchars   mytheme/font          # restyle the bitmap font
 ```
 
-For safety, `remapShader` only accepts **UI/2D** source names — prefixes `ui/`, `menu/`, `hud/`,
-`gfx/2d/`. World and player shaders (`textures/…`, `models/…`) are refused, so it cannot be used
-for texture wallhacks. Remaps are re-applied automatically on `vid_restart` (via `cl_theme`).
+For safety, `remapShader` only accepts **UI/2D** source names — prefixes `ui/`, `ui_`, `menu/`,
+`hud/`, `gfx/2d/`, plus a short exact-name allowlist for menu-only decorations that live outside
+those namespaces (e.g. `models/misc/circle_1`, the main-menu arc). World and player shaders
+(`textures/…`, `models/players|weapons/…`) are refused, so it cannot be used for texture wallhacks.
+Remaps are re-applied automatically on `vid_restart` (via `cl_theme`).
 
 A **shareable visual theme pack** is therefore a `.pk3` (with the replacement images under
 `gfx/2d/…`, `ui/…`) plus a `themes/<name>.cfg` that sets the chrome cvars and issues the
