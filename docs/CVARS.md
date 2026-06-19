@@ -269,7 +269,9 @@ stays opaque.
 
 A theme is just a `.cfg` file under `<gamedir>/themes/` — **share it by sending the file**; the
 recipient drops it into their `themes/` and runs `theme <name>`. Example themes ship in
-[`docs/themes/`](themes/) (`dark` = default, `light`, `classic`).
+[`docs/themes/`](themes/) (`dark` = default, `light`, `classic`, `catppuccin-mocha`). The
+`catppuccin-mocha` theme also remaps the main-menu background (`ui/assets/ut_menuback`) to a
+bundled solid base image (`docs/themes/catppuccin/base.tga`, deploy to `<gamedir>/theme/catppuccin/`).
 
 ```
 \themesave mylook      # capture the current console look as themes/mylook.cfg
