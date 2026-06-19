@@ -212,6 +212,30 @@ bind PGDN con_nexttab
 
 ---
 
+## Client — console appearance & notify
+
+Height and background opacity of the open console, and the notify area (the messages
+shown over the game when the console is closed) are configurable. `con_notifytime`
+(how long a notify line stays, in seconds) already existed.
+
+| Cvar | Default | Description |
+|------|:-------:|-------------|
+| `con_height` | `0.5` | Fraction of the screen the open console covers. Range `0.1`–`1.0`. |
+| `con_opacity` | `0.8` | Console background opacity (`1` = opaque, `0` = fully transparent). Range `0`–`1`. Applies to both the default background and a custom `cl_conColor`. |
+| `con_notifyLines` | `4` | Number of notify lines shown over the game (`0` disables the notify area). Range `0`–`8`. |
+| `con_notifyY` | `0` | Vertical offset of the notify area, in pixels from the top of the screen. Range `0`–`600`. |
+| `con_notifytime` | `3` | How long a notify message stays on screen, in seconds. |
+| `cl_conColor` | `51 51 61 255` | Console background color as `R G B A` (0–255). Default matches the active console tab; empty = default background image. Final opacity is scaled by `con_opacity` (so the default look is the tab color at 80% opacity). |
+
+```
+\con_height 0.7        # console drops to 70% of the screen
+\con_opacity 0.4       # semi-transparent background
+\con_notifyLines 6     # show up to 6 notify lines
+\con_notifyY 80        # push the notify area 80px down
+```
+
+---
+
 ## Cfg scripting — aliases, conditionals, cvar locks
 
 Console-scripting commands for richer `.cfg` files. All are local (never sent to the

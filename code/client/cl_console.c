@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define  DEFAULT_CONSOLE_WIDTH 78
 #define  MAX_CONSOLE_WIDTH 120
 
-#define  NUM_CON_TIMES  4
+#define NUM_CON_TIMES 8 // max notify lines (ring buffer size); con_notifyLines selects how many are shown
 
 #define  CON_TEXTSIZE   65536
 
@@ -90,6 +90,10 @@ cvar_t		*con_notifytime;
 cvar_t		*con_scale;
 cvar_t *con_tabs; // draw the tab bar / enable tabbed console
 cvar_t *con_tabScale; // tab-title font size, multiple of the body font
+cvar_t *con_height;   // fraction of the screen the open console covers
+cvar_t *con_opacity;  // alpha of the console background
+cvar_t *con_notifyLines; // number of notify lines drawn (<= NUM_CON_TIMES)
+cvar_t *con_notifyY;     // initial vertical offset of the notify area, in pixels
 
 int			g_console_field_width;
 
@@ -507,6 +511,18 @@ void Con_Init( void )
 	con_tabScale = Cvar_Get( "con_tabScale", "1.25", CVAR_ARCHIVE_ND );
 	Cvar_CheckRange( con_tabScale, "1.0", "3.0", CV_FLOAT );
 	Cvar_SetDescription( con_tabScale, "Tab-title font size as a multiple of the console body font (1.0 = same size)." );
+	con_height = Cvar_Get( "con_height", "0.5", CVAR_ARCHIVE_ND );
+	Cvar_CheckRange( con_height, "0.1", "1.0", CV_FLOAT );
+	Cvar_SetDescription( con_height, "Fraction of the screen the open console covers (0.5 = half screen)." );
+	con_opacity = Cvar_Get( "con_opacity", "0.8", CVAR_ARCHIVE_ND );
+	Cvar_CheckRange( con_opacity, "0", "1", CV_FLOAT );
+	Cvar_SetDescription( con_opacity, "Opacity of the console background (1 = opaque, 0 = fully transparent)." );
+	con_notifyLines = Cvar_Get( "con_notifyLines", "4", CVAR_ARCHIVE_ND );
+	Cvar_CheckRange( con_notifyLines, "0", "8", CV_INTEGER );
+	Cvar_SetDescription( con_notifyLines, "Number of notify lines shown over the game (0 disables the notify area)." );
+	con_notifyY = Cvar_Get( "con_notifyY", "0", CVAR_ARCHIVE_ND );
+	Cvar_CheckRange( con_notifyY, "0", "600", CV_INTEGER );
+	Cvar_SetDescription( con_notifyY, "Vertical offset of the notify area, in pixels from the top of the screen." );
 
 	Field_Clear( &g_consoleField );
 	g_consoleField.widthInChars = g_console_field_width;
@@ -799,12 +815,20 @@ static void Con_DrawNotify( void )
 	int		skip;
 	int		currentColorIndex;
 	int		colorIndex;
+	int notifyLines;
 
 	currentColorIndex = ColorIndex( COLOR_WHITE );
 	re.SetColor( g_color_table[ currentColorIndex ] );
 
-	v = 0;
-	for ( i = con->current - NUM_CON_TIMES + 1; i <= con->current; i++ ) {
+	// number of notify lines to show, clamped to the ring buffer size
+	notifyLines = con_notifyLines->integer;
+	if ( notifyLines <= 0 )
+		return;
+	if ( notifyLines > NUM_CON_TIMES )
+		notifyLines = NUM_CON_TIMES;
+
+	v = con_notifyY->integer;
+	for ( i = con->current - notifyLines + 1; i <= con->current; i++ ) {
 		if (i < 0)
 			continue;
 		time = con->times[i % NUM_CON_TIMES];
@@ -909,6 +933,8 @@ static void Con_DrawSolidConsole( float frac ) {
 	int				currentColorIndex;
 	int				colorIndex;
 	float			yf, wf;
+	vec4_t conDrawColor;
+	int tabX0 = 0, tabX1 = 0; // x-span covered by the tab bar (0 = none)
 	char			buf[ MAX_CVAR_VALUE_STRING ], *v[4];
 
 	lines = cls.glconfig.vidHeight * frac;
@@ -950,17 +976,18 @@ static void Con_DrawSolidConsole( float frac ) {
 					}
 				}
 			}
-			re.SetColor( conColorValue );
+			// apply con_opacity on a local copy so the cached value is preserved
+			Vector4Copy( conColorValue, conDrawColor );
+			conDrawColor[3] *= con_opacity->value;
+			re.SetColor( conDrawColor );
 			re.DrawStretchPic( 0, 0, wf, yf, 0, 0, 1, 1, cls.whiteShader );
 		} else {
-			re.SetColor( g_color_table[ ColorIndex( COLOR_WHITE ) ] );
+			Vector4Set( conDrawColor, 1.0f, 1.0f, 1.0f, con_opacity->value );
+			re.SetColor( conDrawColor );
 			re.DrawStretchPic( 0, 0, wf, yf, 0, 0, 1, 1, cls.consoleShader );
 		}
 
 	}
-
-	re.SetColor( g_color_table[ ColorIndex( COLOR_RED ) ] );
-	re.DrawStretchPic( 0, yf, wf, 2, 0, 0, 1, 1, cls.whiteShader );
 
 	//y = yf;
 
@@ -972,15 +999,23 @@ static void Con_DrawSolidConsole( float frac ) {
 	// the active one highlighted, with a 1px border. Drawn in pixel space to line
 	// up with the small-char text. Switch with shift+left/right or mouse buttons.
 	if ( con_tabs->integer ) {
-		// opaque backgrounds (so the panel's red border does not show through)
-		// and a red outline on the sides + bottom, so the red border wraps around
-		// the tabs as one shape with the console.
+		// filled backgrounds + a red outline on the sides + bottom, so the red
+		// border wraps the tabs as one shape with the console. Fills and border
+		// are faded by con_opacity to match the (translucent) console background.
 		static const vec4_t bgActive = { 0.20f, 0.20f, 0.24f, 1.00f };
 		static const vec4_t bgInactive = { 0.07f, 0.07f, 0.09f, 1.00f };
-		const float *red = g_color_table[ColorIndex( COLOR_RED )];
+		vec4_t bgA, bgI, red;
+		float op = con_opacity->value;
 		// tab titles are drawn a bit larger than the body text (con_tabScale)
 		float tscale = con_tabScale->value;
 		int cw, chh, th, ty, tx, tpad, t, k, tw;
+
+		Vector4Copy( bgActive, bgA );
+		Vector4Copy( bgInactive, bgI );
+		Vector4Copy( g_color_table[ColorIndex( COLOR_RED )], red );
+		bgA[3] *= op;
+		bgI[3] *= op;
+		red[3] *= op;
 
 		// con_tabScale is range-checked at registration, but clamp the derived
 		// pixel sizes to explicit bounds so the tab-layout arithmetic below is
@@ -1005,6 +1040,7 @@ static void Con_DrawSolidConsole( float frac ) {
 		th = chh + 4;
 		ty = lines; // hang the tabs just below the console panel
 		tx = smallchar_width;
+		tabX0 = tx;              // left edge of the tab strip (separator skips this span)
 		tpad = ( th - chh ) / 2; // vertical centering of the title glyphs
 
 		// keep them on-screen when the console is fully open (frac == 1)
@@ -1019,7 +1055,7 @@ static void Con_DrawSolidConsole( float frac ) {
 				nlen = 32;
 			tw = ( nlen + 2 ) * cw;
 
-			re.SetColor( active ? bgActive : bgInactive );
+			re.SetColor( active ? bgA : bgI );
 			re.DrawStretchPic( tx, ty, tw, th, 0, 0, 0, 0, cls.whiteShader );
 
 			re.SetColor( red );
@@ -1034,6 +1070,22 @@ static void Con_DrawSolidConsole( float frac ) {
 			tx += tw;
 		}
 		re.SetColor( NULL );
+		tabX1 = tx; // right edge of the tab strip
+	}
+
+	// the panel's bottom red separator, faded with the background (con_opacity).
+	// When the tab bar is shown, skip the span it covers so the panel and tabs
+	// read as one shape (no red line bleeding through the translucent tab fills).
+	Vector4Copy( g_color_table[ColorIndex( COLOR_RED )], conDrawColor );
+	conDrawColor[3] *= con_opacity->value;
+	re.SetColor( conDrawColor );
+	if ( tabX1 > tabX0 ) {
+		if ( tabX0 > 0 )
+			re.DrawStretchPic( 0, yf, tabX0, 2, 0, 0, 1, 1, cls.whiteShader ); // left of tabs
+		if ( tabX1 < wf )
+			re.DrawStretchPic( tabX1, yf, wf - tabX1, 2, 0, 0, 1, 1, cls.whiteShader ); // right of tabs
+	} else {
+		re.DrawStretchPic( 0, yf, wf, 2, 0, 0, 1, 1, cls.whiteShader );
 	}
 
 	// draw the text
@@ -1147,7 +1199,7 @@ void Con_RunConsole( void )
 {
 	// decide on the destination height of the console
 	if ( Key_GetCatcher( ) & KEYCATCH_CONSOLE )
-		con->finalFrac = 0.5; // half screen
+		con->finalFrac = con_height->value; // range-checked 0.1-1.0 at registration
 	else
 		con->finalFrac = 0.0; // none visible
 

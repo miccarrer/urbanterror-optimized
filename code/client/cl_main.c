@@ -4511,8 +4511,8 @@ void CL_Init( void ) {
 
 	cl_conXOffset = Cvar_Get ("cl_conXOffset", "0", 0);
 	Cvar_SetDescription( cl_conXOffset, "Console notifications X-offset." );
-	cl_conColor = Cvar_Get( "cl_conColor", "", 0 );
-	Cvar_SetDescription( cl_conColor, "Console background color, set as R G B A values from 0-255, use with \\seta to save in config." );
+	cl_conColor = Cvar_Get( "cl_conColor", "51 51 61 255", 0 );
+	Cvar_SetDescription( cl_conColor, "Console background color, set as R G B A values from 0-255 (default matches the active console tab); empty = background image. Use with \\seta to save in config. Final opacity is also scaled by con_opacity." );
 
 #ifdef MACOS_X
 	// In game video is REALLY slow in Mac OS X right now due to driver slowness

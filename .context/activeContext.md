@@ -1,7 +1,52 @@
 # Active Context — Urban Terror Optimized
 
 ## Dernière mise à jour
-2026-06-19 — Session 12 : **scripting cfg — Lot 1 MERGÉ** (PR #28, merge `e0614bf2` dans `main` le 2026-06-17). Premier lot d'une série de 3 visant à améliorer console + scripting `.cfg` (idées de `docs/FEATURE_IDEAS.md`). Livré : `alias`/`unalias`/`unaliasall` (séquences nommées, persistées dans `q3config.cfg`, garde anti-récursion), `if <cvar> <op> <value> <cmd>` (exec conditionnel), `cvarlock`/`cvarunlock` (verrou local runtime), `time <cmd>` (profiling µs). `make smoke` vert (nouveau cas `tests/integration/cases/scripting.cfg`). Build client+serveur OK. **Branche `feature/cfg-scripting` supprimée**, `main` local resynchronisé sur `origin/main`. **Working tree propre, prêt pour un nouveau chantier.** Lots 2–3 (console UX render-side) à venir.
+2026-06-19 — Session 13 : **scripting cfg — Lot 2** (branche `feature/cfg-scripting-lot2`, depuis `main`). Console UX render-side : `con_height` (hauteur 0.1–1.0, remplace le `0.5` hardcodé), `con_opacity` (alpha du fond 0–1, deux chemins de `Con_DrawSolidConsole`), `con_notifyLines` (0–8) + `con_notifyY` (offset px) dans `Con_DrawNotify` (`NUM_CON_TIMES` 4→8). Seul fichier code : `cl_console.c`. **`make smoke-client` vert** (nouveau cas `cases/client/console-ux.cfg`, 3/3). Build client+serveur OK. **Reste à faire** : commit + push + PR ; puis Lot 3 (recherche scrollback + smart condump + `con_notifyFilter`).
+
+## Session 13 : scripting cfg — Lot 2 (console UX : hauteur, opacité, notify)
+
+**Branche** : `feature/cfg-scripting-lot2` (depuis `main`). **Working tree à committer.**
+
+**Contexte** : 2e des 3 lots « console + scripting `.cfg` ». Découpage par testabilité : Lot 2 =
+UX render-side, donc cvars **assertables headless** (`make smoke-client`, renderer null) mais rendu
+**vérifié visuellement** en jeu. Périmètre validé avec l'utilisateur : **complet** (hauteur +
+opacité + notify lignes + notify Y). Constat avant impl : `con_notifytime` (durée notify) et
+`cl_conColor` (« R G B A », alpha en mode couleur custom uniquement) existaient déjà ; l'offset X
+notify est couvert par `cl_conXOffset`.
+
+**Livré (Lot 2, tout dans `code/client/cl_console.c`)** :
+- **`con_height`** (`0.5`, range 0.1–1.0, `CVAR_ARCHIVE_ND`) — `Con_RunConsole` : `finalFrac =
+  con_height->value` au lieu de `0.5` hardcodé.
+- **`con_opacity`** (`0.8`, range 0–1) — `Con_DrawSolidConsole` : alpha appliqué sur une copie locale
+  `conDrawColor` (vec4) pour **les deux** chemins de fond (shader par défaut `{1,1,1,opacity}` ET
+  couleur custom `cl_conColor` dont l'alpha est multiplié — sans casser le cache `conColorValue`).
+  **Cohérence visuelle** : l'opacité fond aussi tout le **décor** de la console — séparateur rouge
+  du panneau, fonds d'onglets (`bgActive`/`bgInactive`) et bordures rouges des onglets (copies vec4
+  locales `bgA`/`bgI`/`red`, alpha ×`op`). **Textes/titres restent opaques** (lisibilité).
+  **Séparateur retravaillé** : dessiné **après** les onglets (plus avant) et **découpé** pour sauter
+  la bande d'onglets (`tabX0`/`tabX1` = étendue de la barre) → le rouge ne transparaît plus derrière
+  les fonds translucides ; panneau + onglets lisent comme une seule forme (le contour rouge n'entre
+  pas dans la jonction). Tabs sans bordure haute = jonction transparente avec le panneau.
+- **`cl_conColor` défaut changé** (`cl_main.c:4514`) : `""` → **`"51 51 61 255"`** = couleur de
+  l'onglet **actif** (`bgActive {0.20,0.20,0.24}` ×255). Combiné à `con_opacity 0.8`, la console a
+  par défaut la couleur des onglets à 80 % d'opacité. Vider `cl_conColor` ⇒ image de fond d'origine.
+- **`con_notifyLines`** (`4`, range 0–8) + **`con_notifyY`** (`0`, range 0–600 px) — `Con_DrawNotify` :
+  fenêtre d'affichage bornée à `con_notifyLines` (0 ⇒ return), `v` initialisé à `con_notifyY`.
+  **`NUM_CON_TIMES` porté 4→8** = taille du ring buffer `times[]` + modulo (`Con_Linefeed`,
+  `Con_ClearNotify`) ; `con_notifyLines` ≤ 8 ne pilote que l'affichage.
+
+**Pattern suivi** : `con_tabScale` (`Cvar_Get` + `Cvar_CheckRange` + `Cvar_SetDescription`). Globals
+non-`static` comme les autres `con_*` (warnings clang-tidy `misc-use-internal-linkage` = convention
+du fichier, pas une régression).
+
+**Tests** : `tests/integration/cases/client/console-ux.cfg` — registration + clamp des 4 cvars via
+`assert_cvar` (le comparateur `==` gère les floats : `con_height 0.8`, `con_opacity 0.3` OK).
+**`make smoke-client` : 3/3 PASS.** Build client+serveur OK.
+
+**Reste à faire** : commit + push + PR. Puis Lot 3 (recherche scrollback, smart condump,
+`con_notifyFilter`). Vérif visuelle en jeu recommandée avant merge (hauteur/opacité/notify rendus).
+
+---
 
 ## Session 12 : scripting cfg — Lot 1 (`alias`, `if`, `cvarlock`, `time`)
 

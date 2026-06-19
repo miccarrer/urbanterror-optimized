@@ -2,12 +2,21 @@
 
 ## État global du projet
 
-**Milestone actuel** : **scripting cfg — Lot 1 MERGÉ** (session 12, PR #28, merge `e0614bf2` dans
-`main`). `alias`/`if`/`cvarlock`/`time` ajoutés (`make smoke` vert). `main` local resynchronisé,
-branche supprimée, **working tree propre — prêt pour Lot 2** (console UX render-side).
-Précédemment : police des onglets `con_tabScale` (session 11, PR #27) ; `cm360` (session 10,
+**Milestone actuel** : **scripting cfg — Lot 2** (session 13, branche `feature/cfg-scripting-lot2`).
+Console UX render-side : `con_height`/`con_opacity`/`con_notifyLines`/`con_notifyY` (`cl_console.c`,
+`NUM_CON_TIMES` 4→8). `make smoke-client` vert (cas `cases/client/console-ux.cfg`). **À committer +
+push + PR.** Précédemment : Lot 1 scripting (`alias`/`if`/`cvarlock`/`time`) MERGÉ (session 12,
+PR #28, `e0614bf2`) ; police des onglets `con_tabScale` (session 11, PR #27) ; `cm360` (session 10,
 PR #25/#26) ; harnais headless (session 9, PR #24). Fondations M0–M4 terminées ; M5 partiel ;
 M6 (release v0.2.0) publiée ; M7 terminé ; Feature #1 (identity) mergée PR #20.
+
+**Session 13 (2026-06-19) — scripting cfg (Lot 2, console UX)** : 2e des 3 lots. UX console
+render-side : `con_height` (0.1–1.0, remplace `0.5` hardcodé `Con_RunConsole`), `con_opacity` (0–1,
+deux chemins `Con_DrawSolidConsole`), `con_notifyLines` (0–8) + `con_notifyY` (px) dans
+`Con_DrawNotify` (`NUM_CON_TIMES` 4→8). Seul fichier code : `cl_console.c`. Test
+`cases/client/console-ux.cfg` (3/3 PASS via `make smoke-client`). Build client+serveur OK. Branche
+`feature/cfg-scripting-lot2`, à committer/push/PR. Lot 3 (recherche scrollback, smart condump,
+`con_notifyFilter`) à venir. Détails § `activeContext.md` Session 13.
 
 **Session 12 (2026-06-17) — scripting cfg (Lot 1, PR #28 mergée)** : 1er des 3 lots « console +
 scripting `.cfg` » (idées `docs/FEATURE_IDEAS.md`). Ajout `alias`/`unalias`/`unaliasall` (persistés,

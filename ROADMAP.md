@@ -258,7 +258,15 @@ scrollback + smart condump). Voir le plan de session.*
   - **Fichiers** : `cmd.c` (alias/if/time + dispatch), `cvar.c` (lock), `common.c`/`qcommon.h`
     (`Com_Compare` public + `Cmd_WriteAliases`), `q_shared.h` (flag). Test :
     `tests/integration/cases/scripting.cfg`. Doc : [CVARS.md](docs/CVARS.md).
-- **Lot 2 / Lot 3** : à venir (console UX render-side).
+- **Lot 2 — console UX (render-side)** ✅ implémenté, `make smoke-client` vert :
+  - `con_height` (fraction d'écran couverte, 0.1–1.0) — remplace le `0.5` hardcodé de `Con_RunConsole`.
+  - `con_opacity` (alpha du fond, 0–1) — appliqué aux deux chemins de `Con_DrawSolidConsole`
+    (shader par défaut **et** `cl_conColor`).
+  - `con_notifyLines` (0–8) + `con_notifyY` (offset px) — `Con_DrawNotify` ; `NUM_CON_TIMES` porté
+    de 4 à 8 (taille du ring buffer `times[]`). `con_notifytime` (durée) existait déjà.
+  - **Fichier** : `cl_console.c` (seul). Test : `tests/integration/cases/client/console-ux.cfg`.
+    Doc : [CVARS.md](docs/CVARS.md) § « console appearance & notify ».
+- **Lot 3** : à venir (recherche scrollback + smart condump + `con_notifyFilter`).
 
 ---
 
