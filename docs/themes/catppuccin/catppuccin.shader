@@ -151,3 +151,64 @@ theme/catppuccin/acceptarrow_on
 	}
 }
 
+
+// --- Forced-color fills (rgbGen identity ignores the VM vertex tint, so these
+// override VM-coloured elements like the server-browser headers/selection). ---
+theme/catppuccin/probe
+{
+	nopicmip nomipmaps
+	{
+		map theme/catppuccin/magenta.tga
+		rgbGen identity
+	}
+}
+
+theme/catppuccin/fill_surface0
+{
+	nopicmip nomipmaps
+	{
+		map theme/catppuccin/surface0.tga
+		rgbGen identity
+	}
+}
+
+theme/catppuccin/fill_surface1
+{
+	nopicmip nomipmaps
+	{
+		map theme/catppuccin/surface1.tga
+		rgbGen identity
+	}
+}
+
+theme/catppuccin/fill_blue
+{
+	nopicmip nomipmaps
+	{
+		map theme/catppuccin/blue.tga
+		rgbGen identity
+	}
+}
+
+theme/catppuccin/fill_base
+{
+	nopicmip nomipmaps
+	{
+		map theme/catppuccin/base.tga
+		rgbGen identity
+	}
+}
+
+// Semi-transparent Catppuccin panel for in-game menus (rgbGen identity ignores
+// the VM's blue tint; alphaGen const keeps a slight see-through so the game
+// stays visible behind the menu).
+theme/catppuccin/panel
+{
+	nopicmip nomipmaps
+	{
+		map theme/catppuccin/base.tga
+		blendfunc blend
+		rgbGen identity
+		alphaGen const 0.90
+	}
+}
