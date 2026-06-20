@@ -1556,6 +1556,44 @@ void RB_ShowImages( void )
 		vk_draw_geometry( DEPTH_RANGE_NORMAL, qfalse );
 	}
 
+	// label each cell with the image name (debug aid for theming / shader lookup),
+	// drawn from the bigchars charset with a 1px shadow so it reads over any image
+	{
+		static shader_t *charset;
+		const float gw = glConfig.vidWidth / 20.0f;
+		const float gh = glConfig.vidHeight / 15.0f;
+		const float cw = gw / 22.0f; // ~22 chars fit across a cell
+		const float ch = cw * 1.6f;
+		color4ub_t white, black;
+		int j;
+
+		white.rgba[0] = white.rgba[1] = white.rgba[2] = white.rgba[3] = 255;
+		black.rgba[0] = black.rgba[1] = black.rgba[2] = 0;
+		black.rgba[3] = 255;
+
+		if ( charset == NULL )
+			charset = R_FindShader( "gfx/2d/bigchars", LIGHTMAP_2D, qtrue );
+
+		RB_SetGL2D();
+		RB_BeginSurface( charset, 0 );
+		for ( i = 0; i < tr.numImages; i++ ) {
+			const char *name = tr.images[i]->imgName;
+			const float x = ( i % 20 ) * gw + 1.0f;
+			const float y = ( i / 20 ) * gh + gh - ch - 1.0f;
+			if ( name == NULL )
+				continue;
+			for ( j = 0; j < 22 && name[j]; j++ ) {
+				const int c = name[j] & 255;
+				const float fr = ( c >> 4 ) * 0.0625f;
+				const float fc = ( c & 15 ) * 0.0625f;
+				const float gx = x + j * cw;
+				RB_AddQuadStamp2( gx + 1.0f, y + 1.0f, cw, ch, fc, fr, fc + 0.0625f, fr + 0.0625f, black );
+				RB_AddQuadStamp2( gx, y, cw, ch, fc, fr, fc + 0.0625f, fr + 0.0625f, white );
+			}
+		}
+		RB_EndSurface();
+	}
+
 	tess.numIndexes = 0;
 	tess.numVertexes = 0;
 }

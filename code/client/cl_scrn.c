@@ -557,6 +557,32 @@ int SCR_WriteThemeRemaps( fileHandle_t f ) {
 
 /*
 ==================
+SCR_RemapList_f
+
+remaplist — print the active shader remaps issued via remapShader (theme state),
+to confirm what a theme applied and spot failed remaps.
+==================
+*/
+static void SCR_RemapList_f( void ) {
+	int i;
+
+	if ( scr_numThemeRemaps == 0 ) {
+		Com_Printf( "No active shader remaps.\n" );
+		return;
+	}
+
+	Com_Printf( "Active shader remaps (%i):\n", scr_numThemeRemaps );
+	for ( i = 0; i < scr_numThemeRemaps; i++ ) {
+		Com_Printf( "  %s " S_COLOR_CYAN "->" S_COLOR_WHITE " %s%s\n",
+		            scr_themeRemaps[i].oldName, scr_themeRemaps[i].newName,
+		            ( scr_themeRemaps[i].timeOffset[0] && strcmp( scr_themeRemaps[i].timeOffset, "0" ) != 0 )
+		                ? va( " (t=%s)", scr_themeRemaps[i].timeOffset )
+		                : "" );
+	}
+}
+
+/*
+==================
 SCR_RemapShader_f
 
 remapShader <old> <new> [timeOffset] — replace a UI/2D shader/image with another,
@@ -617,6 +643,7 @@ void SCR_Init( void ) {
 	cl_graphshift = Cvar_Get ("graphshift", "0", CVAR_CHEAT);
 
 	Cmd_AddCommand( "remapShader", SCR_RemapShader_f );
+	Cmd_AddCommand( "remaplist", SCR_RemapList_f );
 
 	scr_initialized = qtrue;
 }
