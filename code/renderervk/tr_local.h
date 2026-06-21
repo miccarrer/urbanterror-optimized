@@ -1333,6 +1333,7 @@ extern cvar_t	*r_vbo;
 extern cvar_t	*r_fbo;
 extern cvar_t	*r_hdr;
 extern cvar_t	*r_bloom;
+extern cvar_t *r_consoleBlur;
 extern cvar_t	*r_bloom_threshold;
 extern cvar_t	*r_bloom_intensity;
 extern cvar_t	*r_bloom_threshold_mode;
@@ -1892,6 +1893,11 @@ typedef struct {
 } finishBloomCommand_t;
 
 typedef struct {
+	int commandId;
+	float frac; // console drop fraction [0..1]
+} blurConsoleCommand_t;
+
+typedef struct {
 	int		commandId;
 	shader_t	*shader;
 	float	x, y;
@@ -1933,11 +1939,11 @@ typedef enum {
 	RC_DRAW_BUFFER,
 	RC_SWAP_BUFFERS,
 	RC_FINISHBLOOM,
+	RC_BLUR_CONSOLE,
 	RC_COLORMASK,
 	RC_CLEARDEPTH,
 	RC_CLEARCOLOR
 } renderCommand_t;
-
 
 // these are sort of arbitrary limits.
 // the limits apply to the sum of all scenes in a frame --
@@ -1983,6 +1989,7 @@ void RE_TakeVideoFrame( int width, int height,
 		byte *captureBuffer, byte *encodeBuffer, qboolean motionJpeg );
 
 void RE_FinishBloom( void );
+void RE_BlurConsoleBackground( float frac );
 void RE_ThrottleBackend( void );
 qboolean RE_CanMinimize( void );
 const glconfig_t *RE_GetConfig( void );

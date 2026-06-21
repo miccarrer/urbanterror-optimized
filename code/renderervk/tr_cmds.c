@@ -469,6 +469,21 @@ void RE_FinishBloom( void )
 	cmd->commandId = RC_FINISHBLOOM;
 }
 
+void RE_BlurConsoleBackground( float frac ) {
+	blurConsoleCommand_t *cmd;
+
+	if ( !tr.registered ) {
+		return;
+	}
+
+	cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+	if ( !cmd ) {
+		return;
+	}
+
+	cmd->commandId = RC_BLUR_CONSOLE;
+	cmd->frac = frac;
+}
 
 qboolean RE_CanMinimize( void )
 {

@@ -182,6 +182,8 @@ static void RE_ThrottleBackend( void ) {
 }
 static void RE_FinishBloom( void ) {
 }
+static void RE_BlurConsoleBackground( float frac ) {
+}
 static qboolean RE_CanMinimize( void ) {
 	return qfalse;
 }
@@ -254,6 +256,7 @@ Q_EXPORT refexport_t *QDECL GetRefAPI( int apiVersion, refimport_t *rimp ) {
 
 	re.ThrottleBackend = RE_ThrottleBackend;
 	re.FinishBloom = RE_FinishBloom;
+	re.BlurConsoleBackground = RE_BlurConsoleBackground;
 	re.CanMinimize = RE_CanMinimize;
 	re.GetConfig = RE_GetConfig;
 	re.VertexLighting = RE_VertexLighting;

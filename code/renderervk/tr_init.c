@@ -86,6 +86,7 @@ cvar_t	*r_vbo;
 cvar_t	*r_fbo;
 cvar_t	*r_hdr;
 cvar_t	*r_bloom;
+cvar_t *r_consoleBlur;
 cvar_t	*r_bloom_threshold;
 cvar_t	*r_bloom_intensity;
 cvar_t	*r_bloom_threshold_mode;
@@ -1796,6 +1797,10 @@ static void R_Register( void )
 	ri.Cvar_CheckRange( r_bloom, "0", "1", CV_INTEGER );
 	ri.Cvar_SetDescription(r_bloom, "Enables bloom post-processing effect. Requires \\r_fbo 1.");
 
+	r_consoleBlur = ri.Cvar_Get( "r_consoleBlur", "0", CVAR_ARCHIVE_ND | CVAR_LATCH );
+	ri.Cvar_CheckRange( r_consoleBlur, "0", "4", CV_INTEGER );
+	ri.Cvar_SetDescription( r_consoleBlur, "Frosted-glass blur of the game behind the drop-down console (Vulkan only, requires \\r_fbo 1):\n 0: off\n 1-4: blur strength. Combine with \\con_opacity for the glass tint." );
+
 	r_ext_multisample = ri.Cvar_Get( "r_ext_multisample", "0", CVAR_ARCHIVE_ND | CVAR_LATCH );
 	ri.Cvar_CheckRange( r_ext_multisample, "0", "64", CV_INTEGER );
 	ri.Cvar_SetDescription( r_ext_multisample, "For anti-aliasing geometry edges, valid values: 0|2|4|6|8. Requires \\r_fbo 1." );
@@ -2095,6 +2100,7 @@ refexport_t *GetRefAPI ( int apiVersion, refimport_t *rimp ) {
 
 	re.ThrottleBackend = RE_ThrottleBackend;
 	re.FinishBloom = RE_FinishBloom;
+	re.BlurConsoleBackground = RE_BlurConsoleBackground;
 	re.CanMinimize = RE_CanMinimize;
 	re.GetConfig = RE_GetConfig;
 	re.VertexLighting = RE_VertexLighting;

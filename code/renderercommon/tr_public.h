@@ -111,6 +111,7 @@ typedef struct {
 
 	void	(*ThrottleBackend)( void );
 	void	(*FinishBloom)( void );
+	void ( *BlurConsoleBackground )( float frac );
 
 	void	(*SetColorMappings)( void );
 

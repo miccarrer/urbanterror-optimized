@@ -2049,6 +2049,7 @@ refexport_t *GetRefAPI ( int apiVersion, refimport_t *rimp ) {
 
 	re.ThrottleBackend = RE_ThrottleBackend;
 	re.FinishBloom = RE_FinishBloom;
+	re.BlurConsoleBackground = RE_BlurConsoleBackground;
 	re.CanMinimize = RE_CanMinimize;
 	re.GetConfig = RE_GetConfig;
 	re.VertexLighting = RE_VertexLighting;

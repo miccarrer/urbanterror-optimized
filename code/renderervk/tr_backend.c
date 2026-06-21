@@ -1739,6 +1739,26 @@ static const void *RB_FinishBloom( const void *data )
 	return (const void *)(cmd + 1);
 }
 
+/*
+=============
+RB_BlurConsoleBackground
+
+Frosted-glass blur of the scene behind the drop-down console (Vulkan only).
+=============
+*/
+static const void *RB_BlurConsoleBackground( const void *data ) {
+	const blurConsoleCommand_t *cmd = data;
+
+	RB_EndSurface();
+
+#ifdef USE_VULKAN
+	vk_blur_console( cmd->frac );
+#endif
+
+	backEnd.projection2D = qfalse; // force 2D state to be re-set for the console draws
+
+	return (const void *)( cmd + 1 );
+}
 
 static const void *RB_SwapBuffers( const void *data ) {
 
@@ -1848,6 +1868,9 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			break;
 		case RC_FINISHBLOOM:
 			data = RB_FinishBloom(data);
+			break;
+		case RC_BLUR_CONSOLE:
+			data = RB_BlurConsoleBackground( data );
 			break;
 		case RC_COLORMASK:
 			data = RB_ColorMask(data);

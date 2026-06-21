@@ -29,11 +29,14 @@
 
 #define VK_NUM_BLOOM_PASSES 4
 
+// console-blur (frosted glass): downscaled scratch chain for r_consoleBlur, blit-only
+#define VK_NUM_CONBLUR_IMAGES 4
+
 #ifndef _DEBUG
 #define USE_DEDICATED_ALLOCATION
 #endif
-//#define MIN_IMAGE_ALIGN (128*1024)
-#define MAX_ATTACHMENTS_IN_POOL (8+VK_NUM_BLOOM_PASSES*2) // depth + msaa + msaa-resolve + depth-resolve + screenmap.msaa + screenmap.resolve + screenmap.depth + bloom_extract + blur pairs
+// #define MIN_IMAGE_ALIGN (128*1024)
+#define MAX_ATTACHMENTS_IN_POOL ( 8 + VK_NUM_BLOOM_PASSES * 2 + VK_NUM_CONBLUR_IMAGES ) // depth + msaa + msaa-resolve + depth-resolve + screenmap.msaa + screenmap.resolve + screenmap.depth + bloom_extract + blur pairs + console-blur chain
 
 #define VK_DESC_STORAGE      0
 #define VK_DESC_UNIFORM      0
@@ -289,6 +292,7 @@ void vk_draw_dot( uint32_t storage_offset );
 
 void vk_read_pixels( byte* buffer, uint32_t width, uint32_t height ); // screenshots
 qboolean vk_bloom( void );
+void vk_blur_console( float frac ); // frosted-glass blur behind the drop-down console
 
 qboolean vk_alloc_vbo( const byte *vbo_data, int vbo_size );
 void vk_update_mvp( const float *m );
@@ -404,6 +408,11 @@ typedef struct {
 	VkImageView bloom_image_view[1+VK_NUM_BLOOM_PASSES*2];
 
 	VkDescriptorSet bloom_image_descriptor[1+VK_NUM_BLOOM_PASSES*2];
+
+	// console-blur: downscaled scratch images (transfer-only, no descriptors/pipelines)
+	VkImage conblur_image[VK_NUM_CONBLUR_IMAGES];
+	VkImageView conblur_image_view[VK_NUM_CONBLUR_IMAGES];
+	VkFilter conblur_filter;
 
 	VkImage depth_image;
 	VkImageView depth_image_view;

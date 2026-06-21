@@ -518,6 +518,9 @@ void RE_FinishBloom( void )
 #endif // USE_FBO
 }
 
+void RE_BlurConsoleBackground( float frac ) {
+	// console-blur is a Vulkan-only effect; no-op for the GL renderer
+}
 
 qboolean RE_CanMinimize( void )
 {

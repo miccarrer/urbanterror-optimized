@@ -233,13 +233,19 @@ shown over the game when the console is closed) are configurable. `con_notifytim
 | `con_notifyY` | `0` | Vertical offset of the notify area, in pixels from the top of the screen. Range `0`–`600`. |
 | `con_notifytime` | `3` | How long a notify message stays on screen, in seconds. |
 | `cl_conColor` | `51 51 61 255` | Console background color as `R G B A` (0–255). Default matches the active console tab; empty = default background image. Final opacity is scaled by `con_opacity` (so the default look is the tab color at 80% opacity). |
+| `r_consoleBlur` | `0` | Frosted-glass blur of the game **behind** the open console. `0` = off; `1`–`4` = blur strength. **Vulkan renderer only** (requires `r_fbo 1`; no-op on OpenGL). Latched — takes effect after `vid_restart`. Combine with a low `con_opacity` so the blurred scene shows through the panel. |
 
 ```
 \con_height 0.7        # console drops to 70% of the screen
 \con_opacity 0.4       # semi-transparent background
 \con_notifyLines 6     # show up to 6 notify lines
 \con_notifyY 80        # push the notify area 80px down
+\r_consoleBlur 2       # blur the game behind the console (Vulkan; needs vid_restart)
 ```
+
+> **Frosted glass:** `r_consoleBlur` is a renderer post-process, not a theme cvar, so it is
+> *not* saved by `themesave`. It lives in your video config and is shared across themes.
+> For the strongest effect pair it with a translucent panel, e.g. `con_opacity 0.5`.
 
 ---
 

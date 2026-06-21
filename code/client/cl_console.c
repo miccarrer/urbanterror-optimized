@@ -1167,6 +1167,12 @@ static void Con_DrawSolidConsole( float frac ) {
 	if ( re.FinishBloom )
 		re.FinishBloom();
 
+	// frosted-glass: blur the scene behind the console (Vulkan only; renderer
+	// no-ops elsewhere). r_consoleBlur is the renderer's cvar; absent (e.g. GL) it
+	// reads as 0. Drawn before the semi-transparent panel so it shows through.
+	if ( re.BlurConsoleBackground && Cvar_VariableIntegerValue( "r_consoleBlur" ) > 0 )
+		re.BlurConsoleBackground( frac );
+
 	if ( lines > cls.glconfig.vidHeight )
 		lines = cls.glconfig.vidHeight;
 

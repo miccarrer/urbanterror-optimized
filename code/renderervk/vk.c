@@ -822,9 +822,10 @@ static void vk_create_render_passes( void )
 	VK_CHECK( qvkCreateRenderPass( device, &desc, NULL, &vk.render_pass.main ) );
 	SET_OBJECT_NAME( vk.render_pass.main, "render pass - main", VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT );
 
-	if ( r_bloom->integer ) {
-
-		// post-bloom pass
+	// post-bloom pass: a main-compatible pass that LOADs (preserves) the color
+	// image instead of clearing it, used to resume 2D drawing after the bloom
+	// blend or the console-blur composite. Needed by either feature.
+	if ( r_bloom->integer || r_consoleBlur->integer ) {
 		// color buffer
 		attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD; // load from previous pass
 		 // depth buffer
@@ -839,7 +840,9 @@ static void vk_create_render_passes( void )
 		}
 		VK_CHECK( qvkCreateRenderPass( device, &desc, NULL, &vk.render_pass.post_bloom ) );
 		SET_OBJECT_NAME( vk.render_pass.post_bloom, "render pass - post_bloom", VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT );
+	}
 
+	if ( r_bloom->integer ) {
 		// bloom extraction, using resolved/main fbo as a source
 		desc.attachmentCount = 1;
 
@@ -3513,8 +3516,38 @@ static void vk_create_attachments( void )
 		}
 
 		// post-processing/msaa-resolve
+		// console-blur needs TRANSFER_DST too, to blit the blurred result back into
+		// the console region of the color image.
 		create_color_attachment( glConfig.vidWidth, glConfig.vidHeight, VK_SAMPLE_COUNT_1_BIT, vk.color_format,
-			usage | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, &vk.color_image, &vk.color_image_view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, qfalse );
+		                         usage | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | ( r_consoleBlur->integer ? VK_IMAGE_USAGE_TRANSFER_DST_BIT : 0 ),
+		                         &vk.color_image, &vk.color_image_view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, qfalse );
+
+		// console-blur: downscaled scratch chain (/2, /4, /8, /16), transfer-only.
+		// We progressively downscale the scene into these with linear blits (each
+		// halving step averages 2x2 = a cheap gaussian) then upscale back. Requires
+		// the color format to support blit src+dst on optimal tiling; the linear
+		// filter is used when available, otherwise we fall back to nearest.
+		if ( r_consoleBlur->integer ) {
+			VkFormatProperties props;
+			const VkFormatFeatureFlags need = VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT;
+			qvkGetPhysicalDeviceFormatProperties( vk.physical_device, vk.color_format, &props );
+			if ( ( props.optimalTilingFeatures & need ) == need ) {
+				uint32_t cw = glConfig.vidWidth;
+				uint32_t ch = glConfig.vidHeight;
+				vk.conblur_filter = ( props.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT )
+				                        ? VK_FILTER_LINEAR
+				                        : VK_FILTER_NEAREST;
+				for ( i = 0; i < VK_NUM_CONBLUR_IMAGES; i++ ) {
+					cw = cw > 1 ? cw / 2 : 1;
+					ch = ch > 1 ? ch / 2 : 1;
+					create_color_attachment( cw, ch, VK_SAMPLE_COUNT_1_BIT, vk.color_format,
+					                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+					                         &vk.conblur_image[i], &vk.conblur_image_view[i], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, qfalse );
+				}
+			} else {
+				ri.Printf( PRINT_WARNING, "console-blur disabled: color format lacks blit support\n" );
+			}
+		}
 
 		// screenmap-msaa
 		if ( vk.screenMapSamples > VK_SAMPLE_COUNT_1_BIT ) {
@@ -3544,8 +3577,10 @@ static void vk_create_attachments( void )
 
 	//vk_alloc_attachments();
 
+	// non-transient depth when bloom or console-blur is active: the post_bloom
+	// pass LOADs depth when resuming 2D drawing, which a transient image can't do.
 	create_depth_attachment( glConfig.vidWidth, glConfig.vidHeight, vkSamples, &vk.depth_image, &vk.depth_image_view,
-		(vk.fboActive && r_bloom->integer) ? qfalse : qtrue );
+	                         ( vk.fboActive && ( r_bloom->integer || r_consoleBlur->integer ) ) ? qfalse : qtrue );
 
 	vk_alloc_attachments();
 
@@ -4378,6 +4413,15 @@ static void vk_destroy_attachments( void )
 		qvkDestroyImageView( vk.device, vk.color_image_view, NULL );
 		vk.color_image = VK_NULL_HANDLE;
 		vk.color_image_view = VK_NULL_HANDLE;
+	}
+
+	if ( vk.conblur_image[0] ) {
+		for ( i = 0; i < ARRAY_LEN( vk.conblur_image ); i++ ) {
+			qvkDestroyImage( vk.device, vk.conblur_image[i], NULL );
+			qvkDestroyImageView( vk.device, vk.conblur_image_view[i], NULL );
+			vk.conblur_image[i] = VK_NULL_HANDLE;
+			vk.conblur_image_view[i] = VK_NULL_HANDLE;
+		}
 	}
 
 	if ( vk.msaa_image ) {
@@ -7900,6 +7944,150 @@ void vk_read_pixels( byte *buffer, uint32_t width, uint32_t height )
 	}
 }
 
+// Frosted-glass blur of the scene behind the drop-down console.
+// Pure blit pipeline (no shaders, no descriptors): the composed color image is
+// progressively downscaled with linear blits into the conblur scratch chain
+// (each /2 step averages 2x2 ~ a cheap gaussian), upscaled back, then the
+// blurred top band is blitted into the console region of the color image. The
+// (semi-transparent) console panel is drawn over it afterwards.
+void vk_blur_console( float frac ) {
+	VkCommandBuffer cb;
+	VkImageBlit region;
+	VkImage src;
+	int levels, i;
+	int W, H, consoleH, band;
+	int sw, sh, dw, dh;
+
+	if ( !vk.fboActive || vk.conblur_image[0] == VK_NULL_HANDLE )
+		return;
+
+	if ( vk.renderPassIndex == RENDER_PASS_SCREENMAP )
+		return;
+
+	levels = r_consoleBlur->integer;
+	if ( levels < 1 )
+		return;
+	if ( levels > VK_NUM_CONBLUR_IMAGES )
+		levels = VK_NUM_CONBLUR_IMAGES;
+
+	W = glConfig.vidWidth;
+	H = glConfig.vidHeight;
+	consoleH = (int)( H * frac );
+	if ( consoleH < 1 )
+		return;
+	if ( consoleH > H )
+		consoleH = H;
+
+	cb = vk.cmd->command_buffer;
+
+	// end the active (main/post-bloom) render pass; color image -> SHADER_READ_ONLY
+	vk_end_render_pass();
+
+	// color image: SHADER_READ_ONLY -> TRANSFER_SRC for the first downscale blit
+	record_image_layout_transition( cb, vk.color_image, VK_IMAGE_ASPECT_COLOR_BIT,
+	                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 0, 0 );
+
+	// downscale chain: color -> conblur[0] -> conblur[1] -> ... -> conblur[levels-1]
+	src = vk.color_image;
+	sw = W;
+	sh = H;
+	for ( i = 0; i < levels; i++ ) {
+		dw = W >> ( i + 1 );
+		if ( dw < 1 )
+			dw = 1;
+		dh = H >> ( i + 1 );
+		if ( dh < 1 )
+			dh = 1;
+
+		record_image_layout_transition( cb, vk.conblur_image[i], VK_IMAGE_ASPECT_COLOR_BIT,
+		                                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0, 0 );
+
+		Com_Memset( &region, 0, sizeof( region ) );
+		region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		region.srcSubresource.layerCount = 1;
+		region.srcOffsets[1].x = sw;
+		region.srcOffsets[1].y = sh;
+		region.srcOffsets[1].z = 1;
+		region.dstSubresource = region.srcSubresource;
+		region.dstOffsets[1].x = dw;
+		region.dstOffsets[1].y = dh;
+		region.dstOffsets[1].z = 1;
+		qvkCmdBlitImage( cb, src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		                 vk.conblur_image[i], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region, vk.conblur_filter );
+
+		// becomes the next source
+		record_image_layout_transition( cb, vk.conblur_image[i], VK_IMAGE_ASPECT_COLOR_BIT,
+		                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 0, 0 );
+
+		src = vk.conblur_image[i];
+		sw = dw;
+		sh = dh;
+	}
+
+	// upscale chain back to conblur[0] (no-op when levels == 1)
+	for ( i = levels - 2; i >= 0; i-- ) {
+		dw = W >> ( i + 1 );
+		if ( dw < 1 )
+			dw = 1;
+		dh = H >> ( i + 1 );
+		if ( dh < 1 )
+			dh = 1;
+
+		record_image_layout_transition( cb, vk.conblur_image[i], VK_IMAGE_ASPECT_COLOR_BIT,
+		                                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0, 0 );
+
+		Com_Memset( &region, 0, sizeof( region ) );
+		region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		region.srcSubresource.layerCount = 1;
+		region.srcOffsets[1].x = sw;
+		region.srcOffsets[1].y = sh;
+		region.srcOffsets[1].z = 1;
+		region.dstSubresource = region.srcSubresource;
+		region.dstOffsets[1].x = dw;
+		region.dstOffsets[1].y = dh;
+		region.dstOffsets[1].z = 1;
+		qvkCmdBlitImage( cb, src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		                 vk.conblur_image[i], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region, vk.conblur_filter );
+
+		record_image_layout_transition( cb, vk.conblur_image[i], VK_IMAGE_ASPECT_COLOR_BIT,
+		                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 0, 0 );
+
+		src = vk.conblur_image[i];
+		sw = dw;
+		sh = dh;
+	}
+	// here src == conblur[0], sw/sh == W/2 x H/2 (in TRANSFER_SRC)
+
+	// composite: blurred top band -> color image console region [0,0]..[W,consoleH].
+	// Take only the proportional top band of the downscaled image so the content
+	// stays aligned with what the console covers (no vertical squash).
+	band = sh * consoleH / H;
+	if ( band < 1 )
+		band = 1;
+
+	record_image_layout_transition( cb, vk.color_image, VK_IMAGE_ASPECT_COLOR_BIT,
+	                                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0, 0 );
+
+	Com_Memset( &region, 0, sizeof( region ) );
+	region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	region.srcSubresource.layerCount = 1;
+	region.srcOffsets[1].x = sw;
+	region.srcOffsets[1].y = band;
+	region.srcOffsets[1].z = 1;
+	region.dstSubresource = region.srcSubresource;
+	region.dstOffsets[1].x = W;
+	region.dstOffsets[1].y = consoleH;
+	region.dstOffsets[1].z = 1;
+	qvkCmdBlitImage( cb, src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+	                 vk.color_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region, vk.conblur_filter );
+
+	// color image: TRANSFER_DST -> SHADER_READ_ONLY (resting layout the passes expect)
+	record_image_layout_transition( cb, vk.color_image, VK_IMAGE_ASPECT_COLOR_BIT,
+	                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0, 0 );
+
+	// re-begin a render pass (LOAD) so the console panel draws over the blur
+	vk_begin_post_bloom_render_pass();
+}
 
 qboolean vk_bloom( void )
 {

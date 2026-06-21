@@ -1,5 +1,37 @@
 # Active Context — Urban Terror Optimized
 
+## Session 16 : Flou « frosted glass » derrière la console (Vulkan) — branche `feature/console-blur`
+
+**But** : flouter la scène derrière la console déroulante (verre dépoli), en plus de
+`con_opacity`. **Console uniquement** (menus in-game reportés « un jour »).
+
+**Approche retenue** (déviation assumée du plan initial « réutiliser les passes de blur du
+bloom ») : le blur du bloom n'existe que si `r_bloom` est activé → dépendance indésirable.
+Implémenté à la place un **blur par blit auto-contenu, sans shader, sans dépendance au bloom** :
+- Cvar **`r_consoleBlur`** (`tr_init.c`, `CVAR_ARCHIVE_ND|CVAR_LATCH`, 0..4 ; Vulkan + `r_fbo 1`).
+- Chaîne d'images scratch downscalées **`vk.conblur_image[VK_NUM_CONBLUR_IMAGES=4]`** (/2,/4,/8,/16),
+  usage transfer-only, créées dans `vk_create_attachments` si `r_consoleBlur` (+ check capabilities
+  blit/linéaire du `color_format`, sinon no-op + warning). `color_image` reçoit `TRANSFER_DST`.
+- **`vk_blur_console(frac)`** (`vk.c`, avant `vk_bloom`) : `vk_end_render_pass` → blits downscale
+  color→conblur[0..n] (filtre linéaire = moyenne 2x2 ≈ gaussienne) → upscale retour → blit de la
+  bande haute floutée dans la région console de `color_image` → re-`vk_begin_post_bloom_render_pass`
+  (LOAD) pour que le panneau console se dessine par-dessus. Transitions via `record_image_layout_transition`.
+- **Fix critique** : `render_pass.post_bloom` n'était créé que sous `if(r_bloom)` et la depth était
+  *transient* sans bloom → re-begin aurait crashé. Corrigé : post_bloom créé si `r_bloom||r_consoleBlur`,
+  depth non-transient si `r_bloom||r_consoleBlur`.
+- **Plomberie API** : commande backend `RC_BLUR_CONSOLE`/`RB_BlurConsoleBackground` (`tr_backend.c`),
+  `RE_BlurConsoleBackground` (`tr_cmds.c`), `refexport_t.BlurConsoleBackground` (`tr_public.h`),
+  **stubs no-op** GL (`renderer/`) + null (`renderernull/`). Appel client dans `Con_DrawSolidConsole`
+  après `FinishBloom`, gardé par `Cvar_VariableIntegerValue("r_consoleBlur")>0` + pointeur non-NULL.
+- Doc : `docs/CVARS.md` (§ console appearance). **Pas** capturé par `themesave` (cvar renderer).
+
+**État** : **build OK** (les 3 .so), **`make smoke-client` 4/4**. **NON committé** — code Vulkan
+intriqué non testable en headless → **attente validation visuelle en jeu** (`r_consoleBlur 1..4`,
+`con_opacity` bas, `vid_restart`, vérifier absence d'erreurs de validation / artefacts de layout).
+Itérer si besoin, puis commit.
+
+---
+
 ## Dernière mise à jour
 2026-06-19 — Session 15 : **Thèmes d'UI client — Phases 2 + 3** (branche `feature/ui-theme`). **Phase 3** (finitions, committée à part) : `themesave` capture désormais aussi les **remaps actifs** — registre de remaps de thème dans `cl_scrn.c` (`SCR_RecordThemeRemap`, dédup par source, reset sur self-remap) + `SCR_WriteThemeRemaps` (proto `client.h`) appelé par `Con_ThemeSave_f` → un thème exporté = chrome (cvars) **+** assets (lignes `remapShader`), sans édition manuelle. `make smoke-client` vert (`theme.cfg` étendu : remap+themesave+theme round-trip, 4/4). **Phase 2** (ci-dessous) : remap d'assets UI/2D + police/fond console. Suite de l'étude de faisabilité menus/HUD : le moteur **ne peut pas** reprendre menus/HUD/scoreboard (logique = VM UrT fermées), mais peut **restyler leurs assets 2D** via `RE_RemapShader` sans toucher à la logique. Livré : commande **`remapShader <old> <new> [t]`** (`cl_scrn.c`) gardée par **allowlist UI/2D** (`ui/`/`menu/`/`hud/`/`gfx/2d/`, anti-wallhack) ; cvars `con_charset`/`con_image` (police+fond console ré-enregistrés à chaud, `cl_console.c`) ; **ré-application du thème après `vid_restart`** (`CL_Vid_Restart`, via `cl_theme` exposé en extern `client.h`). `con_charset`/`con_image` ajoutés à `con_themeCvars[]`. Pack partageable = `.pk3` (assets) + `themes/<n>.cfg` (cvars + `remapShader`). **`make smoke-client` vert** (`theme.cfg` étendu, 4/4). **Reste à faire** : commit + push + PR (Phases 1+2 sur `feature/ui-theme`). Décision anti-triche utilisateur : **restreindre aux assets UI/2D**.
 
